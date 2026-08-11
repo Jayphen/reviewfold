@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en" data-theme="corporate">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reviewfold — Document Creation Vertical Slice</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/daisyui.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/themes.css">
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.2.4/dist/index.global.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box} .grid>*{min-width:0} p,li,code{overflow-wrap:anywhere}
+    body{background:var(--color-base-200);color:var(--color-base-content)}
+    .mermaid{display:flex;justify-content:center;overflow:auto}
+  </style>
+</head>
+<body>
+<main class="mx-auto max-w-6xl p-5 lg:p-10 space-y-8">
+  <header class="hero rounded-box bg-base-100 border border-base-300">
+    <div class="hero-content py-12 text-center">
+      <div class="max-w-3xl">
+        <div class="badge badge-primary badge-outline mb-4">JAY-5 · Slice 1</div>
+        <h1 class="text-4xl lg:text-5xl font-bold">Document creation, end to end</h1>
+        <p class="mt-4 text-lg opacity-75">The smallest production-shaped slice: a user enters a title and Markdown/plain text, the server validates it, and MongoDB atomically persists a document plus immutable revision 1.</p>
+      </div>
+    </div>
+  </header>
+
+  <section class="grid md:grid-cols-3 gap-4">
+    <div class="stat bg-base-100 rounded-box border border-base-300"><div class="stat-title">Outcome</div><div class="stat-value text-2xl">Create + open</div><div class="stat-desc">Land on the new document</div></div>
+    <div class="stat bg-base-100 rounded-box border border-base-300"><div class="stat-title">Writes</div><div class="stat-value text-2xl">2 records</div><div class="stat-desc">Document and revision 1</div></div>
+    <div class="stat bg-base-100 rounded-box border border-base-300"><div class="stat-title">Explicitly deferred</div><div class="stat-value text-2xl">Editing</div><div class="stat-desc">No revision 2 or autosave yet</div></div>
+  </section>
+
+  <section class="card card-border bg-base-100"><div class="card-body">
+    <h2 class="card-title text-2xl">User experience</h2>
+    <div class="grid lg:grid-cols-2 gap-6 mt-2">
+      <div class="space-y-3">
+        <ol class="steps steps-vertical">
+          <li class="step step-primary">Open <code>/documents/new</code></li>
+          <li class="step step-primary">Enter title and content</li>
+          <li class="step step-primary">Choose “Create document”</li>
+          <li class="step step-primary">Redirect to <code>/documents/$documentId</code></li>
+        </ol>
+      </div>
+      <div class="card bg-base-200"><div class="card-body">
+        <h3 class="font-bold">Form contract</h3>
+        <fieldset class="fieldset"><legend class="fieldset-legend">Title</legend><input class="input w-full" value="Quarterly policy draft" readonly><p class="label">Required · trimmed · 1–200 characters</p></fieldset>
+        <fieldset class="fieldset"><legend class="fieldset-legend">Content</legend><textarea class="textarea w-full h-28" readonly># Introduction&#10;&#10;This policy…</textarea><p class="label">Required · Markdown or plain text · bounded size</p></fieldset>
+        <button class="btn btn-primary mt-2">Create document</button>
+      </div></div>
+    </div>
+  </div></section>
+
+  <section class="card card-border bg-base-100"><div class="card-body">
+    <h2 class="card-title text-2xl">Request-to-database flow</h2>
+    <div class="mermaid mt-4">
+flowchart TD
+  A["New document route<br/>TanStack Form"] -->|"typed command"| B["createDocument server function"]
+  B --> C["Runtime validation<br/>title + content"]
+  C --> D["Documents application service"]
+  D --> E["MongoDB transaction"]
+  E --> F["Insert documents<br/>currentRevision = 1"]
+  E --> G["Insert document_revisions<br/>revision = 1, immutable content"]
+  F --> H["Return documentId"]
+  G --> H
+  H --> I["Redirect to document detail"]
+    </div>
+    <div class="alert alert-info alert-soft mt-5"><span><strong>Atomicity:</strong> use a MongoDB transaction so a document can never exist without revision 1. Development therefore needs a replica set.</span></div>
+  </div></section>
+
+  <section>
+    <h2 class="text-2xl font-bold mb-4">Implementation sequence</h2>
+    <div class="grid md:grid-cols-2 gap-4">
+      <article class="card card-border bg-base-100"><div class="card-body"><span class="badge badge-primary">1</span><h3 class="card-title">Foundation</h3><ul class="list-disc pl-5 space-y-1"><li>Scaffold TanStack Start with React 19 and TypeScript.</li><li>Add Astryx, MongoDB driver, runtime schema validation, and test tooling.</li><li>Create environment validation and a cached server-only Mongo client.</li><li>Run MongoDB as a local replica set.</li></ul></div></article>
+      <article class="card card-border bg-base-100"><div class="card-body"><span class="badge badge-primary">2</span><h3 class="card-title">Contracts and domain</h3><ul class="list-disc pl-5 space-y-1"><li>Define <code>CreateDocumentCommand</code> and <code>DocumentCreated</code>.</li><li>Generate IDs in the application layer.</li><li>Set revision to 1 and status to <code>draft</code> server-side.</li><li>Never accept owner, status, revision number, or timestamps from the browser.</li></ul></div></article>
+      <article class="card card-border bg-base-100"><div class="card-body"><span class="badge badge-primary">3</span><h3 class="card-title">Persistence operation</h3><ul class="list-disc pl-5 space-y-1"><li>Insert bounded current state into <code>documents</code>.</li><li>Insert full immutable content into <code>document_revisions</code>.</li><li>Create unique index on <code>{ documentId: 1, revision: 1 }</code>.</li><li>Translate duplicate/transient failures into typed application errors.</li></ul></div></article>
+      <article class="card card-border bg-base-100"><div class="card-body"><span class="badge badge-primary">4</span><h3 class="card-title">UI and server boundary</h3><ul class="list-disc pl-5 space-y-1"><li>Build the route using Astryx fields, textarea, alert, and button primitives.</li><li>Call a POST <code>createServerFn</code> with validated data.</li><li>Disable duplicate submission and preserve entered values on failure.</li><li>Redirect only after committed persistence.</li></ul></div></article>
+      <article class="card card-border bg-base-100"><div class="card-body"><span class="badge badge-primary">5</span><h3 class="card-title">Read-back page</h3><ul class="list-disc pl-5 space-y-1"><li>Add the minimum detail route needed to prove creation.</li><li>Load document plus current revision through a query service.</li><li>Render title, content, “Draft,” and “Revision 1.”</li><li>No edit controls in this slice.</li></ul></div></article>
+      <article class="card card-border bg-base-100"><div class="card-body"><span class="badge badge-primary">6</span><h3 class="card-title">Verification</h3><ul class="list-disc pl-5 space-y-1"><li>Unit-test validation and application invariants.</li><li>Integration-test transactional persistence against MongoDB.</li><li>Browser-test success, invalid input, and retry after server failure.</li><li>Run accessibility checks for labels, errors, focus, and pending state.</li></ul></div></article>
+    </div>
+  </section>
+
+  <section class="card card-border bg-base-100"><div class="card-body">
+    <h2 class="card-title text-2xl">Proposed file boundary</h2>
+    <div class="mockup-code mt-3 text-sm">
+      <pre><code>src/routes/documents/new.tsx                 # route composition</code></pre>
+      <pre><code>src/routes/documents/$documentId.tsx         # minimum read-back screen</code></pre>
+      <pre><code>src/ui/modules/document-editor/create-document-form.tsx</code></pre>
+      <pre><code>src/functions/documents/create-document.ts   # validation + delegation</code></pre>
+      <pre><code>src/functions/documents/get-document.ts</code></pre>
+      <pre><code>src/contracts/documents/create-document.ts   # command/result schemas</code></pre>
+      <pre><code>src/server/modules/documents/application/create-document.ts</code></pre>
+      <pre><code>src/server/modules/documents/persistence/mongodb-document-repository.ts</code></pre>
+      <pre><code>src/server/platform/mongodb/client.ts</code></pre>
+      <pre><code>src/server/platform/mongodb/indexes.ts</code></pre>
+    </div>
+  </div></section>
+
+  <section class="grid lg:grid-cols-2 gap-4">
+    <div class="card card-border bg-base-100"><div class="card-body"><h2 class="card-title">Definition of done</h2><ul class="space-y-2"><li>✓ Valid input creates exactly one document and revision 1.</li><li>✓ Revision content is not duplicated into current document state.</li><li>✓ Failed writes leave neither partial record.</li><li>✓ Invalid input never reaches persistence.</li><li>✓ Success opens a read-back view of committed data.</li><li>✓ Keyboard and screen-reader errors are understandable.</li><li>✓ UI has no imports from <code>server/</code>.</li></ul></div></div>
+    <div class="card card-border bg-base-100"><div class="card-body"><h2 class="card-title">Risks and deliberate cuts</h2><div class="space-y-3"><div class="alert alert-warning alert-soft"><span><strong>Identity:</strong> if auth is not part of the first slice, use one explicit development actor behind a replaceable <code>ActorProvider</code>; do not trust an owner ID from the form.</span></div><div class="alert alert-warning alert-soft"><span><strong>Content limits:</strong> choose a conservative request/document limit now and test the boundary.</span></div><p><strong>Not included:</strong> library/search, revision 2, autosave, review requests, anchored comments, rubrics, realtime, diffing, notifications, or rich text.</p></div></div></div>
+  </section>
+
+  <footer class="text-sm opacity-70 pb-8">Assumption: the repository is empty, so this is a greenfield proposal. TanStack Start guidance was checked against current docs: validated POST server functions and redirects are supported. Design fallback: DaisyUI/Tailwind because Reviewfold has no design system files yet; production UI should use Astryx.</footer>
+</main>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.esm.min.mjs";
+  const darkQuery=window.matchMedia("(prefers-color-scheme: dark)");
+  const diagrams=[...document.querySelectorAll('.mermaid')].map(el=>({el,src:el.textContent}));
+  async function render(){mermaid.initialize({startOnLoad:false,theme:darkQuery.matches?'dark':'default',securityLevel:'strict'});for(const d of diagrams){d.el.removeAttribute('data-processed');d.el.textContent=d.src}await mermaid.run({nodes:diagrams.map(d=>d.el)})}
+  if(document.readyState==='complete') render(); else window.addEventListener('load',render,{once:true});
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+# Dependencies and generated build output
+node_modules
+.output
+.tanstack
+.nitro
+dist
+dist-ssr
+coverage
+
+# Generated or externally managed artifacts
+src/routeTree.gen.ts
+pnpm-lock.yaml
+.lavish
