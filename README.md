@@ -9,7 +9,7 @@ A React and TanStack Start foundation for creating, reading, and reviewing Markd
 - TanStack Form and Zod for forms and validation
 - Astryx core with the neutral theme and StyleX compilation
 - Unified, remark parse/stringify, and GFM support for Markdown workflows
-- ESLint, Prettier, and pnpm
+- ESLint, Prettier, dependency-cruiser, and pnpm
 - Nitro Node server targeting Railway
 
 ## Getting started
@@ -27,12 +27,13 @@ The development server runs at <http://localhost:3000>.
 pnpm format
 pnpm format:check
 pnpm lint
+pnpm boundaries
 pnpm typecheck
 pnpm build
 pnpm check
 ```
 
-`pnpm format` writes formatting changes; CI and review workflows should use the non-mutating `pnpm format:check`. `pnpm check` runs formatting validation, linting, type checking, and the production build. The wider JAY-7 verification suite is still pending.
+`pnpm format` writes formatting changes; CI and review workflows should use the non-mutating `pnpm format:check`. `pnpm boundaries` validates the source dependency graph with dependency-cruiser. `pnpm check` runs formatting validation, linting, dependency-boundary checks, type checking, and the production build. The wider JAY-7 verification suite is still pending.
 
 ## Astryx
 
@@ -48,9 +49,31 @@ pnpm exec astryx search "interface pattern"
 
 The Astryx agent guidance is installed in `AGENTS.md`. Tailwind and the generated Tailwind demo files have been removed.
 
+## Source structure
+
+The source tree is split by deployment target and then by feature:
+
+- `src/routes` contains thin, isomorphic TanStack route adapters.
+- `src/ui` contains the Astryx design-system setup, application shell, and
+  browser-facing feature modules.
+- `src/functions` is the client-callable server-function boundary.
+- `src/contracts` contains portable validation and transport contracts.
+- `src/server` contains server-only feature and platform implementations.
+- `src/shared` contains universal, UI-only, and server-only cross-feature code.
+
+dependency-cruiser enforces import directions, portability, resolvability, and
+an acyclic source graph. ESLint provides editor-time feedback for key boundaries
+and enforces the `.functions.ts` and `.server.ts` file conventions. See
+[`src/ARCHITECTURE.md`](src/ARCHITECTURE.md) for the complete dependency
+contract.
+
 ## TanStack Query
 
-A fresh `QueryClient` is created for every router instance in `src/integrations/tanstack-query/root-provider.ts`. `src/router.tsx` connects it to TanStack Router's SSR integration, which installs the React provider and handles query dehydration and hydration. Query and Router development panels are available through TanStack Devtools in development.
+A fresh `QueryClient` is created for every router instance in
+`src/shared/universal/query-context.ts`. `src/router.tsx` connects it to TanStack
+Router's SSR integration, which installs the React provider and handles query
+dehydration and hydration. Query and Router development panels live in the UI
+shell and are available through TanStack Devtools in development.
 
 ## Environment variables
 

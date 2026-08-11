@@ -1,21 +1,8 @@
-import { AppShell } from '@astryxdesign/core/AppShell'
-import { Theme } from '@astryxdesign/core/theme'
-import { neutralTheme } from '@astryxdesign/theme-neutral'
-import { TanStackDevtools } from '@tanstack/react-devtools'
-import type { QueryClient } from '@tanstack/react-query'
-import {
-  HeadContent,
-  Scripts,
-  createRootRouteWithContext,
-} from '@tanstack/react-router'
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { tanstackQueryDevtoolsPlugin } from '../integrations/tanstack-query/devtools'
+import { createRootRouteWithContext } from '@tanstack/react-router'
 
-import appCss from '../styles.css?url'
-
-interface RouterContext {
-  queryClient: QueryClient
-}
+import type { RouterContext } from '#/shared/universal/query-context'
+import appCss from '#/ui/design-system/styles.css?url'
+import { RootDocument } from '#/ui/shell/root-document'
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   head: () => ({
@@ -31,37 +18,3 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   }),
   shellComponent: RootDocument,
 })
-
-function RootDocument({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        {import.meta.env.DEV ? (
-          <>
-            <link rel="stylesheet" href="/virtual:stylex.css" />
-            <script type="module" src="/@id/virtual:stylex:runtime" />
-          </>
-        ) : null}
-        <HeadContent />
-      </head>
-      <body>
-        <Theme theme={neutralTheme} mode="system">
-          <AppShell contentPadding={6} height="auto" variant="wash">
-            {children}
-          </AppShell>
-          <TanStackDevtools
-            config={{ position: 'bottom-right' }}
-            plugins={[
-              {
-                name: 'TanStack Router',
-                render: <TanStackRouterDevtoolsPanel />,
-              },
-              tanstackQueryDevtoolsPlugin,
-            ]}
-          />
-        </Theme>
-        <Scripts />
-      </body>
-    </html>
-  )
-}

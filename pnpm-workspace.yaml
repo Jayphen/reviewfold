@@ -3,3 +3,5 @@ allowBuilds:
   '@astryxdesign/core': true
   esbuild: true
   lightningcss: true
+minimumReleaseAgeExclude:
+  - dependency-cruiser@18.2.0

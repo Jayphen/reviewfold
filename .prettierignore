@@ -11,3 +11,4 @@ coverage
 src/routeTree.gen.ts
 pnpm-lock.yaml
 .lavish
+.memsearch

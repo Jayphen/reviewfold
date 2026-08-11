@@ -34,9 +34,9 @@ Before editing files for a substantial task:
 ## Stack and integrations
 
 - React 19 + TypeScript on TanStack Start and TanStack Router (file-based routing).
-- TanStack Query is integrated through `@tanstack/react-router-ssr-query`; each router gets its own `QueryClient`, and query state is dehydrated/hydrated across SSR.
+- TanStack Query is integrated through `@tanstack/react-router-ssr-query`; each router gets its own `QueryClient` from `src/shared/universal/query-context.ts`, and query state is dehydrated/hydrated across SSR.
 - TanStack Form and Zod are installed for the upcoming document creation view. Build product form UI directly with Astryx primitives rather than restoring the removed generated Tailwind demo adapters.
-- Astryx core with the neutral theme is the sole design system. StyleX is compiled by `@astryxdesign/build/vite`; global CSS is limited to the Astryx reset, base, and theme imports in `src/styles.css`.
+- Astryx core with the neutral theme is the sole design system. StyleX is compiled by `@astryxdesign/build/vite`; global CSS is limited to the Astryx reset, base, and theme imports in `src/ui/design-system/styles.css`.
 - Markdown read/write pipeline: `unified`, `remark-parse`, `remark-stringify`, and `remark-gfm`. Keep Markdown as the canonical stored source; parse to mdast only when validation or transformation is needed, and stringify mdast when programmatic edits must be written back.
 - Railway deployment through the generated Nitro Node server. The Vite Nitro plugin, `build` script, and `start` script are required deployment integration points.
 - pnpm is the only supported package manager. Approved native dependency builds live in `pnpm-workspace.yaml`.
@@ -53,11 +53,12 @@ Before editing files for a substantial task:
 ## Architectural decisions and gotchas
 
 - `src/routeTree.gen.ts` is generated and excluded from ESLint; never edit it manually.
+- Source is split by deployment target, then feature, as documented in `src/ARCHITECTURE.md`: routes are framework adapters; UI, public server functions, portable contracts, server internals, and shared target-specific code remain separate dependency zones.
+- ESLint enforces cross-target import restrictions. Server-only files under `src/server` use `.server.ts`; client-callable wrappers under `src/functions` use `.functions.ts`.
 - Document reads/writes that touch MongoDB, a filesystem, or credentials must be implemented in a server function. Client forms should call mutations with `useServerFn`; invalidate the relevant TanStack Query keys or router state after successful writes.
 - JAY-7 selects MongoDB as persistence, but its driver, validated environment, replica-set Compose setup, and server client are not implemented yet. Do not imply durable storage before those pieces exist.
 - Generated Tailwind starter components, demo form adapters, and demo routes were removed. Do not reintroduce Tailwind or another component library.
-- Astryx 0.3.0's source-build alias shadows its published CSS subpath exports, so `vite.config.ts` has exact CSS aliases before `astryxStylex()` adds the broad source alias. Keep that workaround until the upstream plugin handles CSS exports.
-- Import `neutralTheme` from `@astryxdesign/theme-neutral`, not its `/built` export; the 0.3.0 built ESM currently contains an extensionless internal import that fails in the Vite development SSR runtime.
+- Astryx 0.3.0's source-build alias shadows published artifacts, so `vite.config.ts` keeps exact aliases for the core CSS exports and `@astryxdesign/theme-neutral/built` before `astryxStylex()` adds its broad source alias. The theme alias also lets Vite resolve the built theme's extensionless internal icon import during development SSR. Keep these workarounds until the upstream packages resolve their published artifacts directly.
 - `@tanstack/intent list` reported two transitive versions of `@tanstack/devtools-event-client`; Intent selected the newer local version. This is currently informational.
 
 ## Next steps

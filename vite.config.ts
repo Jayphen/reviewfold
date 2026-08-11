@@ -11,14 +11,18 @@ import { nitro } from 'nitro/vite'
 const coreRoot = fileURLToPath(
   new URL('./node_modules/@astryxdesign/core/', import.meta.url),
 )
+const neutralThemeRoot = fileURLToPath(
+  new URL('./node_modules/@astryxdesign/theme-neutral/', import.meta.url),
+)
 
 const config = defineConfig({
   resolve: {
     tsconfigPaths: true,
     alias: {
-      // Keep CSS exports on their published files while Astryx compiles TS source.
+      // Keep published artifacts resolvable while Astryx compiles core TS source.
       '@astryxdesign/core/astryx.css': `${coreRoot}dist/astryx.css`,
       '@astryxdesign/core/reset.css': `${coreRoot}src/reset.css`,
+      '@astryxdesign/theme-neutral/built': `${neutralThemeRoot}dist/neutral.js`,
     },
   },
   plugins: [
