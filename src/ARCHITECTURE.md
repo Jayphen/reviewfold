@@ -17,6 +17,7 @@ src/
   server/
     modules/                 Server-only feature application code
     platform/
+      environment/           Validated server runtime configuration
       mongodb/               MongoDB infrastructure
   shared/
     universal/               Runtime-neutral helpers

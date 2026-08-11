@@ -29,15 +29,17 @@ pnpm format:check
 pnpm lint
 pnpm boundaries
 pnpm typecheck
+pnpm test
+pnpm test:unit
 pnpm build
 pnpm check
 ```
 
-`pnpm format` writes formatting changes; CI and review workflows should use the non-mutating `pnpm format:check`. `pnpm boundaries` validates the source dependency graph with dependency-cruiser. `pnpm check` runs formatting validation, linting, dependency-boundary checks, type checking, and the production build. The wider JAY-7 verification suite is still pending.
+`pnpm format` writes formatting changes; CI and review workflows should use the non-mutating `pnpm format:check`. `pnpm boundaries` validates the source dependency graph with dependency-cruiser. `pnpm check` runs formatting validation, linting, dependency-boundary checks, type checking, unit tests, and the production build. The wider JAY-7 verification suite is still pending.
 
 ## Astryx
 
-Astryx is the only UI design system. Its reset, base styles, and neutral theme are imported in `src/styles.css`; StyleX compilation is configured in `vite.config.ts`.
+Astryx is the only UI design system. Its reset, base styles, and neutral theme are imported in `src/ui/design-system/styles.css`; StyleX compilation is configured in `vite.config.ts`.
 
 Before implementing UI, use the installed CLI to discover supported patterns and component APIs:
 
@@ -77,7 +79,22 @@ shell and are available through TanStack Devtools in development.
 
 ## Environment variables
 
-No application variables are wired up yet. `.env.example` contains no secrets. JAY-7 still requires typed validation for MongoDB configuration before persistence is introduced. Never prefix server secrets with `VITE_`, because Vite exposes prefixed values to the browser.
+Copy the documented non-secret defaults before starting the app:
+
+```bash
+cp .env.example .env
+```
+
+The server requires `APP_ENV`, `MONGODB_URI`, and `MONGODB_DATABASE`. They are
+validated on every server request before application code runs; missing or
+invalid values produce an error naming each affected variable and pointing back
+to `.env.example`. Tests pass isolated values directly to the parser and never
+depend on or mutate the developer's environment.
+
+Never prefix server secrets with `VITE_`, because Vite exposes prefixed values
+to the browser bundle. The environment accessor lives in
+`src/server/platform/environment/environment.server.ts` and must not be imported
+by routes or UI.
 
 ## Markdown
 
@@ -88,7 +105,8 @@ No application variables are wired up yet. `.env.example` contains no secrets. J
 Railway's Railpack builder detects pnpm and the package scripts automatically:
 
 1. Push the repository to GitHub and create a Railway project from it.
-2. Add required production variables after the MongoDB environment contract exists.
+2. Configure `APP_ENV`, `MONGODB_URI`, and `MONGODB_DATABASE` with Railway
+   service variables or references.
 3. Deploy and generate a domain under **Networking**.
 
 Railpack runs `pnpm build` and starts the Nitro server with `pnpm start` (`node .output/server/index.mjs`).

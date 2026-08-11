@@ -44,7 +44,8 @@ Before editing files for a substantial task:
 
 ## Environment and deployment
 
-- No application environment variables are required by the empty scaffold. `.env.example` intentionally documents this and must be updated when persistence or external services are added.
+- `APP_ENV`, `MONGODB_URI`, and `MONGODB_DATABASE` are required. `.env.example` provides non-secret local defaults, the portable parser lives in `src/contracts/server-environment.ts`, and `src/server/platform/environment/environment.server.ts` reads `process.env` per request.
+- Global request middleware in `src/start.ts` validates the server environment before application request handling. Tests pass isolated environment objects and must not mutate the developer's `process.env`.
 - Never prefix server secrets with `VITE_`; that prefix exposes values to the browser bundle.
 - TanStack Start modules and route loaders are isomorphic by default. Read server environment variables per request inside `createServerFn` handlers or another explicit server boundary, never at module scope.
 - Railway setup: connect the repository, let Railpack run `pnpm build`, and start with `pnpm start` (`node .output/server/index.mjs`). Generate a public domain under Railway Networking.
@@ -56,14 +57,14 @@ Before editing files for a substantial task:
 - Source is split by deployment target, then feature, as documented in `src/ARCHITECTURE.md`: routes are framework adapters; UI, public server functions, portable contracts, server internals, and shared target-specific code remain separate dependency zones.
 - ESLint enforces cross-target import restrictions. Server-only files under `src/server` use `.server.ts`; client-callable wrappers under `src/functions` use `.functions.ts`.
 - Document reads/writes that touch MongoDB, a filesystem, or credentials must be implemented in a server function. Client forms should call mutations with `useServerFn`; invalidate the relevant TanStack Query keys or router state after successful writes.
-- JAY-7 selects MongoDB as persistence, but its driver, validated environment, replica-set Compose setup, and server client are not implemented yet. Do not imply durable storage before those pieces exist.
+- JAY-7 selects MongoDB as persistence. Environment validation is implemented, but the driver, replica-set Compose setup, and server client are not; do not imply durable storage before those pieces exist.
 - Generated Tailwind starter components, demo form adapters, and demo routes were removed. Do not reintroduce Tailwind or another component library.
 - Astryx 0.3.0's source-build alias shadows published artifacts, so `vite.config.ts` keeps exact aliases for the core CSS exports and `@astryxdesign/theme-neutral/built` before `astryxStylex()` adds its broad source alias. The theme alias also lets Vite resolve the built theme's extensionless internal icon import during development SSR. Keep these workarounds until the upstream packages resolve their published artifacts directly.
 - `@tanstack/intent list` reported two transitive versions of `@tanstack/devtools-event-client`; Intent selected the newer local version. This is currently informational.
 
 ## Next steps
 
-1. Complete JAY-7 with the pinned runtime/toolchain, MongoDB replica set and server client, validated environment, import boundaries, tests, and CI.
+1. Complete JAY-7 with the pinned runtime/toolchain, MongoDB replica set and server client, remaining tests, and CI.
 2. Build the JAY-6 document creation route with TanStack Form, Zod validation, and Astryx primitives.
 3. Put persistence behind a validated `createServerFn` mutation; keep Markdown source canonical and invalidate relevant TanStack Query data after writes.
 4. Add tests for Markdown round-tripping, form validation, and document creation before shipping the feature.

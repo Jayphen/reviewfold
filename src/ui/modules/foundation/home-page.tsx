@@ -18,14 +18,17 @@ export function HomePage() {
           The project foundation is ready for the document creation vertical
           slice, with Markdown workflows and type-safe server data access.
         </Text>
+        <Text as="p" type="supporting" color="secondary">
+          Get started by creating your first document or exploring the available
+          features.
+        </Text>
       </VStack>
 
       <Banner
         status="info"
-        title="Foundation ready"
+        title="Foundation ready for document creation"
         description="Astryx provides the interface foundation, while TanStack Query handles cached server state with SSR hydration."
       />
-
       <Button
         label="Create a document"
         variant="primary"
