@@ -41,6 +41,7 @@ Before editing files for a substantial task:
 - MongoDB 8.0.28 runs locally as a single-node `rs0` replica set through Docker Compose on Colima. The official Node.js driver is isolated behind `src/server/platform/mongodb/client.server.ts`.
 - Railway deployment through the generated Nitro Node server. The Vite Nitro plugin, `build` script, and `start` script are required deployment integration points.
 - pnpm is the only supported package manager. Approved native dependency builds live in `pnpm-workspace.yaml`.
+- Use Conventional Commits for every commit message (for example, `feat(ui): add document creation navigation`).
 - ESLint flat config handles code-quality rules, while Prettier handles formatting. `eslint-config-prettier` is last in `eslint.config.js` to disable conflicting stylistic rules. Use `pnpm format`, `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, or the combined `pnpm check` before merging.
 
 ## Environment and deployment

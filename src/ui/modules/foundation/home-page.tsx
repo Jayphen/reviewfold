@@ -1,8 +1,9 @@
 import { Banner } from '@astryxdesign/core/Banner'
-import { Button } from '@astryxdesign/core/Button'
 import { Heading } from '@astryxdesign/core/Heading'
 import { Text } from '@astryxdesign/core/Text'
 import { VStack } from '@astryxdesign/core/VStack'
+
+import { RouterButtonLink } from '#/shared/ui/router-link'
 
 export function HomePage() {
   return (
@@ -29,11 +30,10 @@ export function HomePage() {
         title="Foundation ready for document creation"
         description="Astryx provides the interface foundation, while TanStack Query handles cached server state with SSR hydration."
       />
-      <Button
-        label="Create a document"
+      <RouterButtonLink
+        to="/documents/new"
+        label="Create a new document"
         variant="primary"
-        isDisabled
-        tooltip="Document creation will be implemented in JAY-6."
       />
     </VStack>
   )
