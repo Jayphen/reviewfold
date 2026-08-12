@@ -37,7 +37,9 @@ src/
 - `contracts` stay portable: no UI, MongoDB, Node-only, server, or function
   imports.
 - `server` owns server-only application and infrastructure code. Executable
-  server-only files use the `.server.ts` suffix.
+  server-only files use the `.server.ts` suffix. Platform integrations such as
+  the cached MongoDB client stay under `server/platform`; feature persistence
+  belongs under the matching `server/modules` feature when it is introduced.
 - `shared/universal` cannot depend on a deployment target. `shared/ui` and
   `shared/server` are target-specific and cannot cross-import.
 
@@ -52,3 +54,20 @@ Run `pnpm boundaries` to validate this dependency graph with
 circular, unresolved, undeclared, and Node-only dependencies outside the server
 zone. ESLint keeps the corresponding high-signal rules available in editors and
 enforces the target-specific filename suffixes.
+
+## MongoDB platform boundary
+
+`server/platform/mongodb/client.server.ts` is the only MongoDB connection
+owner. It reads validated configuration at connection time, caches one
+`MongoClient` promise for the server process, clears failed attempts so they can
+be retried, exposes session/transaction primitives, and can be explicitly
+closed by tests. It does not own feature collections, indexes, schemas, or
+repositories.
+
+Local development runs a single `rs0` member through `compose.yaml`. The member
+advertises `127.0.0.1:27017` because the application runs on the host while the
+database runs inside Colima. The published port is loopback-only and persistent
+state belongs to the Docker-managed `reviewfold-mongodb-data` volume rather than
+the repository. The one-shot initializer keeps connection retries in a small
+shell wrapper and replica-set configuration in a standalone mongosh JavaScript
+file.

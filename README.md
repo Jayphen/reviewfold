@@ -9,17 +9,54 @@ A React and TanStack Start foundation for creating, reading, and reviewing Markd
 - TanStack Form and Zod for forms and validation
 - Astryx core with the neutral theme and StyleX compilation
 - Unified, remark parse/stringify, and GFM support for Markdown workflows
+- MongoDB Node.js driver with a local single-node replica set
 - ESLint, Prettier, dependency-cruiser, and pnpm
 - Nitro Node server targeting Railway
 
 ## Getting started
 
+Prerequisites are Node.js, pnpm, [Colima](https://github.com/abiosoft/colima),
+and the Docker CLI with Compose support. Start Colima and confirm that Docker is
+using its context before starting the database:
+
+```bash
+colima start
+docker context show
+```
+
 ```bash
 pnpm install
+cp .env.example .env
+pnpm db:up
 pnpm dev
 ```
 
 The development server runs at <http://localhost:3000>.
+
+## Local MongoDB
+
+The Compose setup runs MongoDB 8.0.28 as a single-node `rs0` replica set. It
+initializes idempotently, waits for a writable primary, publishes only to
+`127.0.0.1:27017`, and persists data in the named
+`reviewfold-mongodb-data` volume managed by Colima.
+
+```bash
+pnpm db:up       # start, initialize, and wait for the primary
+pnpm db:status   # inspect container and health state
+pnpm db:down     # stop containers and preserve the named volume
+pnpm db:reset    # delete the named volume and start from an empty database
+```
+
+`pnpm db:reset` is destructive for local MongoDB data. The replica-set member
+advertises `127.0.0.1:27017` so the host-run TanStack app can discover it after
+the initial connection crosses the Colima port mapping. No database credentials
+are used in this loopback-only development setup.
+
+With the replica set running, verify the driver connection and primary state:
+
+```bash
+pnpm test:integration
+```
 
 ## Quality checks
 
@@ -31,11 +68,12 @@ pnpm boundaries
 pnpm typecheck
 pnpm test
 pnpm test:unit
+pnpm test:integration
 pnpm build
 pnpm check
 ```
 
-`pnpm format` writes formatting changes; CI and review workflows should use the non-mutating `pnpm format:check`. `pnpm boundaries` validates the source dependency graph with dependency-cruiser. `pnpm check` runs formatting validation, linting, dependency-boundary checks, type checking, unit tests, and the production build. The wider JAY-7 verification suite is still pending.
+`pnpm format` writes formatting changes; CI and review workflows should use the non-mutating `pnpm format:check`. `pnpm boundaries` validates the source dependency graph with dependency-cruiser. `pnpm check` runs formatting validation, linting, dependency-boundary checks, type checking, unit tests, and the production build. MongoDB integration remains opt-in because it requires the local replica set.
 
 ## Astryx
 
@@ -95,6 +133,12 @@ Never prefix server secrets with `VITE_`, because Vite exposes prefixed values
 to the browser bundle. The environment accessor lives in
 `src/server/platform/environment/environment.server.ts` and must not be imported
 by routes or UI.
+
+The MongoDB client lives in
+`src/server/platform/mongodb/client.server.ts`. It caches one connected driver
+client for the server process, exposes session and transaction primitives for
+future server modules, and provides an explicit close function for tests. It
+does not create collections, indexes, or feature repositories.
 
 ## Markdown
 
