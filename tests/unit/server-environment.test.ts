@@ -76,7 +76,7 @@ describe('server environment', () => {
         MONGODB_DATABASE: 'reviewfold invalid',
         MONGODB_URI: invalidUri,
       }),
-    ).toThrowError(InvalidServerEnvironmentError)
+    ).toThrow(InvalidServerEnvironmentError)
 
     try {
       parseServerEnvironment({
