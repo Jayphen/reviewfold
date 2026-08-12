@@ -154,7 +154,3 @@ Railway's Railpack builder detects pnpm and the package scripts automatically:
 3. Deploy and generate a domain under **Networking**.
 
 Railpack runs `pnpm build` and starts the Nitro server with `pnpm start` (`node .output/server/index.mjs`).
-
-## Active work
-
-[JAY-7](https://linear.app/jayphen/issue/JAY-7/initialize-and-scaffold-the-reviewfold-project) tracks foundation setup. [JAY-6](https://linear.app/jayphen/issue/JAY-6/implement-document-creation-vertical-slice) is the first product vertical slice.
