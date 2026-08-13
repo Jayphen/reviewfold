@@ -1,9 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/documents/new')({
-  component: RouteComponent,
-})
+import { CreateDocumentForm } from '#/ui/modules/document-editor/create-document-form'
 
-function RouteComponent() {
-  return <div>Hello "/documents/new"!</div>
-}
+export const Route = createFileRoute('/documents/new')({
+  component: CreateDocumentForm,
+})
