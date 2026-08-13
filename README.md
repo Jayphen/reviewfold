@@ -13,11 +13,30 @@ A React and TanStack Start foundation for creating, reading, and reviewing Markd
 - ESLint, Prettier, dependency-cruiser, and pnpm
 - Nitro Node server targeting Railway
 
+## Supported toolchain
+
+Reviewfold supports Node.js 24.16.0 (Krypton LTS) and pnpm 11.20.0. The
+repository-owned pins are `.node-version`, `package.json#engines.node`, and the
+exact `package.json#packageManager` entry; the pull-request workflow consumes
+those pins rather than maintaining separate version values.
+
+TanStack Start, Router, Router CLI, SSR Query integration, Form, Query, and
+devtools are pinned as one tested dependency group in `package.json`. Update and
+verify that group together rather than advancing its packages independently.
+
+Confirm the expected tools before installing dependencies:
+
+```bash
+node --version # v24.16.0
+pnpm --version # 11.20.0
+```
+
 ## Getting started
 
-Prerequisites are Node.js, pnpm, [Colima](https://github.com/abiosoft/colima),
-and the Docker CLI with Compose support. Start Colima and confirm that Docker is
-using its context before starting the database:
+Prerequisites are the pinned Node.js and pnpm versions,
+[Colima](https://github.com/abiosoft/colima), and the Docker CLI with Compose
+support. Start Colima and confirm that Docker is using its context before
+starting the database:
 
 ```bash
 colima start
@@ -147,7 +166,10 @@ does not create collections, indexes, or feature repositories.
 
 ## Railway deployment
 
-Railway's Railpack builder detects pnpm and the package scripts automatically:
+Railway's Railpack builder detects pnpm and the package scripts automatically.
+The repository declares Node.js 24.16.0 and pnpm 11.20.0 in its runtime and
+package metadata; confirm those versions in the Railway build log when creating
+or changing the service.
 
 1. Push the repository to GitHub and create a Railway project from it.
 2. Configure `APP_ENV`, `MONGODB_URI`, and `MONGODB_DATABASE` with Railway
