@@ -93,7 +93,9 @@ pnpm build
 pnpm check
 ```
 
-`pnpm format` writes formatting changes; CI and review workflows should use the non-mutating `pnpm format:check`. `pnpm boundaries` validates the source dependency graph with dependency-cruiser, while `pnpm boundaries:graph` writes an ignored, boundary-level Mermaid graph to `architecture-boundaries.mmd`. `pnpm check` runs formatting validation, linting, dependency-boundary checks, type checking, unit tests, and the production build. MongoDB integration remains opt-in because it requires the local replica set.
+`pnpm format` writes formatting changes; CI and review workflows should use the non-mutating `pnpm format:check`. `pnpm boundaries` validates the source dependency graph with dependency-cruiser, while `pnpm boundaries:graph` writes an ignored, boundary-level Mermaid graph to `architecture-boundaries.mmd`. `pnpm check` runs formatting validation, linting, dependency-boundary checks, type checking, unit tests, and the production build.
+
+The pull-request workflow runs `pnpm check` in its main job. A separate integration job starts the Docker Compose MongoDB replica set, runs `pnpm test:integration`, and removes its containers and volume even when an earlier step fails. Locally, MongoDB integration remains opt-in because it requires the replica set to be running.
 
 ## Astryx
 
