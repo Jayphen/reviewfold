@@ -46,13 +46,13 @@ export default {
       to: { path: [server, sharedServer] },
     },
     {
-      name: 'ui-can-only-depend-inward',
+      name: 'ui-cannot-import-routes-or-server-internals',
       severity: 'error',
       comment:
-        'UI may depend on contracts and shared UI or universal code, not adapters or server code.',
+        'UI may call public server functions, but cannot depend on routes or server-only code.',
       from: { path: ui },
       to: {
-        path: '^src/(?:routes|functions|server|shared/server)(?:/|$)',
+        path: '^src/(?:routes|server|shared/server)(?:/|$)',
       },
     },
     {

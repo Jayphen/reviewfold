@@ -15,6 +15,15 @@ const serverOnlyImportPatterns = [
   },
 ]
 
+const outwardUiImportPatterns = [
+  {
+    regex:
+      '^(?:#/(?:ui|routes|shared/ui)(?:/|$)|(?:\\.\\.?/)+(?:.*?/)?(?:ui|routes|shared/ui)(?:/|$))',
+    message:
+      'Public server functions cannot depend on routes, UI, or shared UI.',
+  },
+]
+
 const contractForbiddenImportPatterns = [
   ...serverOnlyImportPatterns,
   {
@@ -147,6 +156,7 @@ export default tseslint.config(
     files: ['src/functions/**/*.{ts,tsx}'],
     rules: {
       'architecture/functions-file-suffix': 'error',
+      'no-restricted-imports': ['error', { patterns: outwardUiImportPatterns }],
     },
   },
   {

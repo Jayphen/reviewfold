@@ -57,9 +57,10 @@ Before editing files for a substantial task:
 ## Architectural decisions and gotchas
 
 - `src/routeTree.gen.ts` is generated and excluded from ESLint; never edit it manually.
-- Source is split by deployment target, then feature, as documented in `src/ARCHITECTURE.md`: routes are framework adapters; UI, public server functions, portable contracts, server internals, and shared target-specific code remain separate dependency zones.
+- Source is split by deployment target, then feature, as documented in `src/ARCHITECTURE.md`: `route → UI → public *.functions.ts adapter → server module → platform`. Routes remain thin composition adapters.
+- UI modules may import public adapters from `src/functions` and call mutations with `useServerFn`. The reverse dependency is forbidden: server functions cannot import routes or UI, and UI cannot import `src/server` or `src/shared/server`.
 - ESLint enforces cross-target import restrictions. Server-only files under `src/server` use `.server.ts`; client-callable wrappers under `src/functions` use `.functions.ts`.
-- Document reads/writes that touch MongoDB, a filesystem, or credentials must be implemented in a server function. Client forms should call mutations with `useServerFn`; invalidate the relevant TanStack Query keys or router state after successful writes.
+- Document reads/writes that touch MongoDB, a filesystem, or credentials must be implemented in a server function. After a successful UI-owned mutation, invalidate the relevant TanStack Query keys or router state.
 - The shared MongoDB client caches a connection promise, resets failed attempts, supports sessions and transaction callbacks, and has an explicit test close hook. Feature collections, validators, indexes, and repositories are intentionally absent until their vertical slice.
 - Generated Tailwind starter components, demo form adapters, and demo routes were removed. Do not reintroduce Tailwind or another component library.
 - Astryx 0.3.0's source-build alias shadows published artifacts, so `vite.config.ts` keeps exact aliases for the core CSS exports and `@astryxdesign/theme-neutral/built` before `astryxStylex()` adds its broad source alias. The theme alias also lets Vite resolve the built theme's extensionless internal icon import during development SSR. Keep these workarounds until the upstream packages resolve their published artifacts directly.

@@ -27,13 +27,19 @@ src/
 
 ## Dependency direction
 
-- `routes` are thin, isomorphic TanStack adapters. They may compose UI modules
-  and call public server functions, but never import server internals.
-- `ui` may depend on `contracts`, `shared/universal`, and `shared/ui`; it never
-  imports `server` or `shared/server`.
+```text
+route → UI → public *.functions.ts adapter → server module → platform
+```
+
+- `routes` are thin, isomorphic TanStack composition adapters. They compose UI
+  modules and may call public server functions for route data, but never import
+  server internals. User-initiated mutations remain owned by the UI module.
+- `ui` may depend on public modules in `functions`, plus `contracts`,
+  `shared/universal`, and `shared/ui`. UI modules call server mutations with
+  `useServerFn`; they never import `server` or `shared/server`.
 - `functions` expose the network boundary. Feature files use the
   `.functions.ts` suffix, validate with contracts, and delegate to
-  `server/modules`.
+  `server/modules`. They cannot depend back on routes or UI.
 - `contracts` stay portable: no UI, MongoDB, Node-only, server, or function
   imports.
 - `server` owns server-only application and infrastructure code. Executable
@@ -52,8 +58,9 @@ trees.
 Run `pnpm boundaries` to validate this dependency graph with
 [dependency-cruiser](../.dependency-cruiser.mjs). The boundary check also rejects
 circular, unresolved, undeclared, and Node-only dependencies outside the server
-zone. ESLint keeps the corresponding high-signal rules available in editors and
-enforces the target-specific filename suffixes.
+zone. ESLint keeps the corresponding high-signal rules available in editors,
+including the allowed `ui → functions` direction and forbidden reverse import,
+and enforces the target-specific filename suffixes.
 
 ## MongoDB platform boundary
 
