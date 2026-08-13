@@ -65,6 +65,7 @@ pnpm format
 pnpm format:check
 pnpm lint
 pnpm boundaries
+pnpm boundaries:graph
 pnpm typecheck
 pnpm test
 pnpm test:unit
@@ -73,7 +74,7 @@ pnpm build
 pnpm check
 ```
 
-`pnpm format` writes formatting changes; CI and review workflows should use the non-mutating `pnpm format:check`. `pnpm boundaries` validates the source dependency graph with dependency-cruiser. `pnpm check` runs formatting validation, linting, dependency-boundary checks, type checking, unit tests, and the production build. MongoDB integration remains opt-in because it requires the local replica set.
+`pnpm format` writes formatting changes; CI and review workflows should use the non-mutating `pnpm format:check`. `pnpm boundaries` validates the source dependency graph with dependency-cruiser, while `pnpm boundaries:graph` writes an ignored, boundary-level Mermaid graph to `architecture-boundaries.mmd`. `pnpm check` runs formatting validation, linting, dependency-boundary checks, type checking, unit tests, and the production build. MongoDB integration remains opt-in because it requires the local replica set.
 
 ## Astryx
 

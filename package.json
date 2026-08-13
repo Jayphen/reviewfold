@@ -12,6 +12,7 @@
     "preview": "vite preview",
     "start": "node .output/server/index.mjs",
     "boundaries": "depcruise src --config .dependency-cruiser.mjs",
+    "boundaries:graph": "depcruise src --config .dependency-cruiser.mjs --include-only '^src/' --exclude '^src/routeTree[.]gen[.]ts$' --collapse '^src/(?:routes|functions|contracts)(?:/|$)|^src/ui/(?:design-system|shell|modules)(?:/|$)|^src/server/(?:modules|platform)(?:/|$)|^src/shared/(?:universal|ui|server)(?:/|$)' --output-type mermaid --output-to architecture-boundaries.mmd",
     "db:up": "bash scripts/db-up.sh",
     "db:down": "docker compose down --remove-orphans",
     "db:reset": "bash scripts/db-reset.sh",
