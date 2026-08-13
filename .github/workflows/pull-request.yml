@@ -23,13 +23,12 @@ jobs:
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 11.20.0
           run_install: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 24.16.0
+          node-version-file: .node-version
           cache: pnpm
 
       - name: Install dependencies
@@ -37,3 +36,36 @@ jobs:
 
       - name: Run checks
         run: pnpm check
+
+  integration:
+    name: MongoDB integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Start MongoDB replica set
+        run: pnpm db:up
+
+      - name: Run MongoDB integration tests
+        run: pnpm test:integration
+
+      - name: Stop MongoDB replica set
+        if: ${{ always() }}
+        run: docker compose down --volumes --remove-orphans

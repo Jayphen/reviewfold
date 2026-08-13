@@ -62,6 +62,13 @@ zone. ESLint keeps the corresponding high-signal rules available in editors,
 including the allowed `ui → functions` direction and forbidden reverse import,
 and enforces the target-specific filename suffixes.
 
+Run `pnpm boundaries:graph` to write the current source dependencies as a
+boundary-level Mermaid graph in `architecture-boundaries.mmd`. The graph
+collapses files into the documented route, UI, function, contract, server, and
+shared zones and excludes the generated route tree; it visualizes actual
+imports, while this document remains the source of truth for allowed dependency
+directions.
+
 ## MongoDB platform boundary
 
 `server/platform/mongodb/client.server.ts` is the only MongoDB connection
