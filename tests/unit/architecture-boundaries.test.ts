@@ -117,6 +117,12 @@ describe('UI and server-function dependency boundaries', () => {
 })
 
 describe('server-layer dependency boundaries', () => {
+  it('allows server functions to import feature modules', async () => {
+    await expect(
+      getBoundaryViolations('functions-to-modules'),
+    ).resolves.toEqual([])
+  })
+
   it('rejects server-function imports of platform infrastructure', async () => {
     const violations = await getBoundaryViolations('functions-to-platform')
 
@@ -129,6 +135,12 @@ describe('server-layer dependency boundaries', () => {
         to: 'src/server/platform/mongodb/client.server.ts',
       }),
     ])
+  })
+
+  it('allows feature modules to import platform infrastructure', async () => {
+    await expect(getBoundaryViolations('modules-to-platform')).resolves.toEqual(
+      [],
+    )
   })
 
   it('rejects platform imports of feature modules', async () => {

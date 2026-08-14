@@ -101,11 +101,19 @@ export default {
       to: { path: '^mongodb(?:/|$)' },
     },
     {
-      name: 'server-cannot-import-outward-adapters-or-ui',
+      name: 'server-modules-cannot-import-outward-adapters-or-ui',
       severity: 'error',
       comment:
-        'Server internals cannot depend on routes, UI, or public functions.',
-      from: { path: server },
+        'Feature modules cannot depend on routes, UI, or public functions.',
+      from: { path: serverModules },
+      to: { path: '^src/(?:routes|ui|functions|shared/ui)(?:/|$)' },
+    },
+    {
+      name: 'server-platform-cannot-import-outward-adapters-or-ui',
+      severity: 'error',
+      comment:
+        'Platform infrastructure cannot depend on routes, UI, or public functions.',
+      from: { path: serverPlatform },
       to: { path: '^src/(?:routes|ui|functions|shared/ui)(?:/|$)' },
     },
     {
