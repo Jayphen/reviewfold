@@ -115,3 +115,33 @@ describe('UI and server-function dependency boundaries', () => {
     ])
   })
 })
+
+describe('server-layer dependency boundaries', () => {
+  it('rejects server-function imports of platform infrastructure', async () => {
+    const violations = await getBoundaryViolations('functions-to-platform')
+
+    expect(violations).toEqual([
+      expect.objectContaining({
+        from: 'src/functions/create-document.functions.ts',
+        rule: expect.objectContaining({
+          name: 'functions-cannot-import-server-platform',
+        }),
+        to: 'src/server/platform/mongodb/client.server.ts',
+      }),
+    ])
+  })
+
+  it('rejects platform imports of feature modules', async () => {
+    const violations = await getBoundaryViolations('platform-to-modules')
+
+    expect(violations).toEqual([
+      expect.objectContaining({
+        from: 'src/server/platform/mongodb/client.server.ts',
+        rule: expect.objectContaining({
+          name: 'server-platform-cannot-import-feature-modules',
+        }),
+        to: 'src/server/modules/documents/create-document.server.ts',
+      }),
+    ])
+  })
+})
