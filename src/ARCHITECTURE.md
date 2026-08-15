@@ -28,7 +28,9 @@ src/
 ## Dependency direction
 
 ```text
-route → UI → public *.functions.ts adapter → server module → platform
+routes ──→ UI ──→ functions ──→ server/modules ──→ server/platform
+  │                   │                 │
+  └───────────────────┴──→ contracts ←─┘
 ```
 
 - `routes` are thin, isomorphic TanStack composition adapters. They compose UI
@@ -52,6 +54,25 @@ route → UI → public *.functions.ts adapter → server module → platform
 Empty zones are retained with `.gitkeep` until their first real vertical
 behavior exists. Do not add speculative barrel exports or empty business-module
 trees.
+
+Within the server boundary, imports follow one direction:
+
+```ts
+// Allowed: public adapter delegates to a feature operation.
+import { createDocument } from '#/server/modules/documents/create-document.server'
+
+// Rejected: public adapter bypasses the feature module.
+import { getMongoClient } from '#/server/platform/mongodb/client.server'
+
+// Allowed: feature code uses infrastructure.
+import { getMongoClient } from '#/server/platform/mongodb/client.server'
+
+// Rejected: infrastructure depends on feature behavior.
+import { createDocument } from '#/server/modules/documents/create-document.server'
+```
+
+Both server sublayers also remain isolated from routes, UI, public functions,
+and `shared/ui`.
 
 ## Enforcement
 

@@ -4,6 +4,8 @@ const ui = '^src/ui(?:/|$)'
 const functions = '^src/functions(?:/|$)'
 const contracts = '^src/contracts(?:/|$)'
 const server = '^src/server(?:/|$)'
+const serverModules = '^src/server/modules(?:/|$)'
+const serverPlatform = '^src/server/platform(?:/|$)'
 const universal = '^src/shared/universal(?:/|$)'
 const sharedUi = '^src/shared/ui(?:/|$)'
 const sharedServer = '^src/shared/server(?:/|$)'
@@ -74,6 +76,14 @@ export default {
       to: { path: '^src/(?:routes|ui|shared/ui)(?:/|$)' },
     },
     {
+      name: 'functions-cannot-import-server-platform',
+      severity: 'error',
+      comment:
+        'Public server functions must delegate to feature modules instead of importing platform infrastructure.',
+      from: { path: functions },
+      to: { path: serverPlatform },
+    },
+    {
       name: 'contracts-must-remain-portable',
       severity: 'error',
       comment:
@@ -91,12 +101,28 @@ export default {
       to: { path: '^mongodb(?:/|$)' },
     },
     {
-      name: 'server-cannot-import-outward-adapters-or-ui',
+      name: 'server-modules-cannot-import-outward-adapters-or-ui',
       severity: 'error',
       comment:
-        'Server internals cannot depend on routes, UI, or public functions.',
-      from: { path: server },
+        'Feature modules cannot depend on routes, UI, or public functions.',
+      from: { path: serverModules },
       to: { path: '^src/(?:routes|ui|functions|shared/ui)(?:/|$)' },
+    },
+    {
+      name: 'server-platform-cannot-import-outward-adapters-or-ui',
+      severity: 'error',
+      comment:
+        'Platform infrastructure cannot depend on routes, UI, or public functions.',
+      from: { path: serverPlatform },
+      to: { path: '^src/(?:routes|ui|functions|shared/ui)(?:/|$)' },
+    },
+    {
+      name: 'server-platform-cannot-import-feature-modules',
+      severity: 'error',
+      comment:
+        'Platform infrastructure is an inner server layer and cannot depend on feature modules.',
+      from: { path: serverPlatform },
+      to: { path: serverModules },
     },
     {
       name: 'shared-server-can-only-depend-inward',
