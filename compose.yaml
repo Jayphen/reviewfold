@@ -1,44 +1,28 @@
 name: reviewfold
 
 services:
-  mongodb:
-    image: mongo:8.0.28
-    command:
-      - mongod
-      - --replSet
-      - rs0
-      - --bind_ip_all
-      - --port
-      - '27017'
+  postgresql:
+    image: postgres:18.4-alpine
     restart: unless-stopped
+    environment:
+      POSTGRES_DB: reviewfold
+      POSTGRES_PASSWORD: reviewfold
+      POSTGRES_USER: reviewfold
     ports:
-      - 127.0.0.1:27017:27017
+      - 127.0.0.1:5432:5432
     volumes:
-      - reviewfold-mongodb-data:/data/db
+      - reviewfold-postgresql-data:/var/lib/postgresql
+      - ./infra/postgresql/initialize-databases.sql:/docker-entrypoint-initdb.d/initialize-databases.sql:ro
     healthcheck:
       test:
         - CMD-SHELL
-        - >-
-          mongosh --quiet --host 127.0.0.1 --port 27017
-          --eval 'quit(db.hello().isWritablePrimary ? 0 : 1)'
+        - pg_isready --username=$${POSTGRES_USER} --dbname=$${POSTGRES_DB}
       interval: 2s
       timeout: 5s
       retries: 30
       start_period: 5s
     stop_grace_period: 30s
 
-  mongodb-init:
-    image: mongo:8.0.28
-    depends_on:
-      mongodb:
-        condition: service_started
-    restart: 'no'
-    entrypoint:
-      - bash
-      - /opt/reviewfold/init-replica-set.sh
-    volumes:
-      - ./infra/mongodb:/opt/reviewfold:ro
-
 volumes:
-  reviewfold-mongodb-data:
-    name: reviewfold-mongodb-data
+  reviewfold-postgresql-data:
+    name: reviewfold-postgresql-data

@@ -8,23 +8,22 @@ import { getServerEnvironment } from '#/server/platform/environment/environment.
 
 const documentedDevelopmentEnvironment = {
   APP_ENV: 'development',
-  MONGODB_DATABASE: 'reviewfold',
-  MONGODB_URI: 'mongodb://127.0.0.1:27017/?replicaSet=rs0',
+  DATABASE_URL: 'postgresql://reviewfold:reviewfold@127.0.0.1:5432/reviewfold',
 } as const
 
 const isolatedTestEnvironment = {
   APP_ENV: 'test',
-  MONGODB_DATABASE: 'reviewfold_test',
-  MONGODB_URI: 'mongodb://127.0.0.1:27017/?replicaSet=rs0',
+  DATABASE_URL:
+    'postgresql://reviewfold:reviewfold@127.0.0.1:5432/reviewfold_test',
 } as const
 
 describe('server environment', () => {
   it('accepts the documented development configuration', () => {
     expect(parseServerEnvironment(documentedDevelopmentEnvironment)).toEqual({
       appEnvironment: 'development',
-      mongodb: {
-        databaseName: 'reviewfold',
-        uri: 'mongodb://127.0.0.1:27017/?replicaSet=rs0',
+      postgresql: {
+        connectionString:
+          'postgresql://reviewfold:reviewfold@127.0.0.1:5432/reviewfold',
       },
     })
   })
@@ -32,15 +31,15 @@ describe('server environment', () => {
   it('accepts isolated test configuration without mutating process.env', () => {
     expect(getServerEnvironment(isolatedTestEnvironment)).toEqual({
       appEnvironment: 'test',
-      mongodb: {
-        databaseName: 'reviewfold_test',
-        uri: 'mongodb://127.0.0.1:27017/?replicaSet=rs0',
+      postgresql: {
+        connectionString:
+          'postgresql://reviewfold:reviewfold@127.0.0.1:5432/reviewfold_test',
       },
     })
   })
 
   it('reports every missing variable with setup guidance', () => {
-    expect.assertions(5)
+    expect.assertions(4)
 
     try {
       parseServerEnvironment({})
@@ -54,11 +53,7 @@ describe('server environment', () => {
       )
       expect(error).toHaveProperty(
         'message',
-        expect.stringContaining('MONGODB_URI: is required'),
-      )
-      expect(error).toHaveProperty(
-        'message',
-        expect.stringContaining('MONGODB_DATABASE: is required'),
+        expect.stringContaining('DATABASE_URL: is required'),
       )
       expect(error).toHaveProperty(
         'message',
@@ -67,27 +62,25 @@ describe('server environment', () => {
     }
   })
 
-  it('rejects invalid values without echoing the MongoDB URI', () => {
-    const invalidUri = 'https://username:password@example.com/database'
+  it('rejects invalid values without echoing the database URL', () => {
+    const invalidUrl = 'https://username:password@example.com/database'
 
     expect(() =>
       parseServerEnvironment({
         APP_ENV: 'staging',
-        MONGODB_DATABASE: 'reviewfold invalid',
-        MONGODB_URI: invalidUri,
+        DATABASE_URL: invalidUrl,
       }),
     ).toThrow(InvalidServerEnvironmentError)
 
     try {
       parseServerEnvironment({
         APP_ENV: 'staging',
-        MONGODB_DATABASE: 'reviewfold invalid',
-        MONGODB_URI: invalidUri,
+        DATABASE_URL: invalidUrl,
       })
     } catch (error) {
       expect(error).toHaveProperty(
         'message',
-        expect.not.stringContaining(invalidUri),
+        expect.not.stringContaining(invalidUrl),
       )
     }
   })

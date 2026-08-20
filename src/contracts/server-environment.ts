@@ -1,35 +1,25 @@
 import { z } from 'zod'
 
-const mongoDbUriPattern = /^mongodb(?:\+srv)?:\/\/\S+$/
-const mongoDbDatabaseNamePattern = /^[^/\\."$*<>:|?\s]+$/
+const postgresConnectionStringPattern = /^postgres(?:ql)?:\/\/\S+$/
 
 const serverEnvironmentSchema = z.object({
   APP_ENV: z.enum(['development', 'test', 'production'], {
     error: 'must be development, test, or production',
   }),
-  MONGODB_URI: z
+  DATABASE_URL: z
     .string({ error: 'is required' })
     .trim()
     .min(1, 'must not be empty')
     .regex(
-      mongoDbUriPattern,
-      'must be a MongoDB URI beginning with mongodb:// or mongodb+srv://',
-    ),
-  MONGODB_DATABASE: z
-    .string({ error: 'is required' })
-    .trim()
-    .min(1, 'must not be empty')
-    .regex(
-      mongoDbDatabaseNamePattern,
-      'must not contain whitespace or MongoDB database-name separators',
+      postgresConnectionStringPattern,
+      'must be a PostgreSQL connection string beginning with postgres:// or postgresql://',
     ),
 })
 
 export interface ServerEnvironment {
   appEnvironment: 'development' | 'test' | 'production'
-  mongodb: {
-    databaseName: string
-    uri: string
+  postgresql: {
+    connectionString: string
   }
 }
 
@@ -62,9 +52,8 @@ export function parseServerEnvironment(
 
   return {
     appEnvironment: result.data.APP_ENV,
-    mongodb: {
-      databaseName: result.data.MONGODB_DATABASE,
-      uri: result.data.MONGODB_URI,
+    postgresql: {
+      connectionString: result.data.DATABASE_URL,
     },
   }
 }

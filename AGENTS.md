@@ -38,7 +38,7 @@ Before editing files for a substantial task:
 - TanStack Form and Zod are installed for the upcoming document creation view. Build product form UI directly with Astryx primitives rather than restoring the removed generated Tailwind demo adapters.
 - Astryx core with the neutral theme is the sole design system. StyleX is compiled by `@astryxdesign/build/vite`; global CSS is limited to the Astryx reset, base, and theme imports in `src/ui/design-system/styles.css`.
 - Markdown read/write pipeline: `unified`, `remark-parse`, `remark-stringify`, and `remark-gfm`. Keep Markdown as the canonical stored source; parse to mdast only when validation or transformation is needed, and stringify mdast when programmatic edits must be written back.
-- MongoDB 8.0.28 runs locally as a single-node `rs0` replica set through Docker Compose on Colima. The official Node.js driver is isolated behind `src/server/platform/mongodb/client.server.ts`.
+- PostgreSQL 18.4 runs locally through Docker Compose on Colima. The `pg` connection pool is isolated behind `src/server/platform/postgresql/client.server.ts`.
 - Railway deployment through the generated Nitro Node server. The Vite Nitro plugin, `build` script, and `start` script are required deployment integration points.
 - pnpm is the only supported package manager. Approved native dependency builds live in `pnpm-workspace.yaml`.
 - Use Conventional Commits for every commit message (for example, `feat(ui): add document creation navigation`).
@@ -46,13 +46,13 @@ Before editing files for a substantial task:
 
 ## Environment and deployment
 
-- `APP_ENV`, `MONGODB_URI`, and `MONGODB_DATABASE` are required. `.env.example` provides non-secret local defaults, the portable parser lives in `src/contracts/server-environment.ts`, and `src/server/platform/environment/environment.server.ts` reads `process.env` per request.
+- `APP_ENV` and `DATABASE_URL` are required. `.env.example` provides non-secret local defaults, the portable parser lives in `src/contracts/server-environment.ts`, and `src/server/platform/environment/environment.server.ts` reads `process.env` per request.
 - Global request middleware in `src/start.ts` validates the server environment before application request handling. Tests pass isolated environment objects and must not mutate the developer's `process.env`.
 - Never prefix server secrets with `VITE_`; that prefix exposes values to the browser bundle.
 - TanStack Start modules and route loaders are isomorphic by default. Read server environment variables per request inside `createServerFn` handlers or another explicit server boundary, never at module scope.
 - Railway setup: connect the repository, let Railpack run `pnpm build`, and start with `pnpm start` (`node .output/server/index.mjs`). Generate a public domain under Railway Networking.
 - If document persistence later uses a Railway database or volume, add the service in Railway, expose its reference variable to this app, and mirror only the variable name (never a secret value) in `.env.example`.
-- Local MongoDB publishes only on `127.0.0.1:27017`, advertises the same host address to host-run clients, and persists in the Docker-managed `reviewfold-mongodb-data` volume. Use `pnpm db:up`, `pnpm db:down`, and destructive `pnpm db:reset`; never commit database files.
+- Local PostgreSQL publishes only on `127.0.0.1:5432` and persists in the Docker-managed `reviewfold-postgresql-data` volume. Use `pnpm db:up`, `pnpm db:down`, and destructive `pnpm db:reset`; never commit database files.
 
 ## Architectural decisions and gotchas
 
@@ -60,8 +60,8 @@ Before editing files for a substantial task:
 - Source is split by deployment target, then feature, as documented in `src/ARCHITECTURE.md`: `route → UI → public *.functions.ts adapter → server module → platform`. Routes remain thin composition adapters.
 - UI modules may import public adapters from `src/functions` and call mutations with `useServerFn`. The reverse dependency is forbidden: server functions cannot import routes or UI, and UI cannot import `src/server` or `src/shared/server`.
 - ESLint enforces cross-target import restrictions. Server-only files under `src/server` use `.server.ts`; client-callable wrappers under `src/functions` use `.functions.ts`.
-- Document reads/writes that touch MongoDB, a filesystem, or credentials must be implemented in a server function. After a successful UI-owned mutation, invalidate the relevant TanStack Query keys or router state.
-- The shared MongoDB client caches a connection promise, resets failed attempts, supports sessions and transaction callbacks, and has an explicit test close hook. Feature collections, validators, indexes, and repositories are intentionally absent until their vertical slice.
+- Document reads/writes that touch PostgreSQL, a filesystem, or credentials must be implemented in a server function. After a successful UI-owned mutation, invalidate the relevant TanStack Query keys or router state.
+- The shared PostgreSQL module caches a `pg.Pool`, runs transactions on one checked-out client, and has an explicit test close hook. Feature tables, migrations, indexes, and repositories are intentionally absent until their vertical slice.
 - Generated Tailwind starter components, demo form adapters, and demo routes were removed. Do not reintroduce Tailwind or another component library.
 - Astryx 0.3.0's source-build alias shadows published artifacts, so `vite.config.ts` keeps exact aliases for the core CSS exports and `@astryxdesign/theme-neutral/built` before `astryxStylex()` adds its broad source alias. The theme alias also lets Vite resolve the built theme's extensionless internal icon import during development SSR. Keep these workarounds until the upstream packages resolve their published artifacts directly.
 - `@tanstack/intent list` reported two transitive versions of `@tanstack/devtools-event-client`; Intent selected the newer local version. This is currently informational.

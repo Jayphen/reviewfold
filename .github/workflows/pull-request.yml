@@ -38,7 +38,7 @@ jobs:
         run: pnpm check
 
   integration:
-    name: MongoDB integration
+    name: PostgreSQL integration
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -60,12 +60,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Start MongoDB replica set
+      - name: Start PostgreSQL
         run: pnpm db:up
 
-      - name: Run MongoDB integration tests
+      - name: Run PostgreSQL integration tests
         run: pnpm test:integration
 
-      - name: Stop MongoDB replica set
+      - name: Stop PostgreSQL
         if: ${{ always() }}
         run: docker compose down --volumes --remove-orphans

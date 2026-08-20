@@ -132,7 +132,7 @@ describe('server-layer dependency boundaries', () => {
         rule: expect.objectContaining({
           name: 'functions-cannot-import-server-platform',
         }),
-        to: 'src/server/platform/mongodb/client.server.ts',
+        to: 'src/server/platform/postgresql/client.server.ts',
       }),
     ])
   })
@@ -148,7 +148,7 @@ describe('server-layer dependency boundaries', () => {
 
     expect(violations).toEqual([
       expect.objectContaining({
-        from: 'src/server/platform/mongodb/client.server.ts',
+        from: 'src/server/platform/postgresql/client.server.ts',
         rule: expect.objectContaining({
           name: 'server-platform-cannot-import-feature-modules',
         }),

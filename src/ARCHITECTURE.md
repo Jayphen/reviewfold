@@ -18,7 +18,7 @@ src/
     modules/                 Server-only feature application code
     platform/
       environment/           Validated server runtime configuration
-      mongodb/               MongoDB infrastructure
+      postgresql/            PostgreSQL infrastructure
   shared/
     universal/               Runtime-neutral helpers
     ui/                      Cross-feature UI helpers
@@ -42,11 +42,12 @@ routes ──→ UI ──→ functions ──→ server/modules ──→ serve
 - `functions` expose the network boundary. Feature files use the
   `.functions.ts` suffix, validate with contracts, and delegate to
   `server/modules`. They cannot depend back on routes or UI.
-- `contracts` stay portable: no UI, MongoDB, Node-only, server, or function
+- `contracts` stay portable: no UI, database driver, Node-only, server, or
+  function
   imports.
 - `server` owns server-only application and infrastructure code. Executable
   server-only files use the `.server.ts` suffix. Platform integrations such as
-  the cached MongoDB client stay under `server/platform`; feature persistence
+  the cached PostgreSQL pool stays under `server/platform`; feature persistence
   belongs under the matching `server/modules` feature when it is introduced.
 - `shared/universal` cannot depend on a deployment target. `shared/ui` and
   `shared/server` are target-specific and cannot cross-import.
@@ -62,10 +63,10 @@ Within the server boundary, imports follow one direction:
 import { createDocument } from '#/server/modules/documents/create-document.server'
 
 // Rejected: public adapter bypasses the feature module.
-import { getMongoClient } from '#/server/platform/mongodb/client.server'
+import { getPostgresPool } from '#/server/platform/postgresql/client.server'
 
 // Allowed: feature code uses infrastructure.
-import { getMongoClient } from '#/server/platform/mongodb/client.server'
+import { getPostgresPool } from '#/server/platform/postgresql/client.server'
 
 // Rejected: infrastructure depends on feature behavior.
 import { createDocument } from '#/server/modules/documents/create-document.server'
@@ -90,19 +91,16 @@ shared zones and excludes the generated route tree; it visualizes actual
 imports, while this document remains the source of truth for allowed dependency
 directions.
 
-## MongoDB platform boundary
+## PostgreSQL platform boundary
 
-`server/platform/mongodb/client.server.ts` is the only MongoDB connection
-owner. It reads validated configuration at connection time, caches one
-`MongoClient` promise for the server process, clears failed attempts so they can
-be retried, exposes session/transaction primitives, and can be explicitly
-closed by tests. It does not own feature collections, indexes, schemas, or
-repositories.
+`server/platform/postgresql/client.server.ts` is the only PostgreSQL connection
+owner. It reads validated configuration when the pool is first requested,
+caches one `pg.Pool` for the server process, exposes a transaction helper that
+keeps each transaction on one checked-out client, and can be explicitly closed
+by tests. It does not own feature tables, indexes, migrations, or repositories.
 
-Local development runs a single `rs0` member through `compose.yaml`. The member
-advertises `127.0.0.1:27017` because the application runs on the host while the
-database runs inside Colima. The published port is loopback-only and persistent
-state belongs to the Docker-managed `reviewfold-mongodb-data` volume rather than
-the repository. The one-shot initializer keeps connection retries in a small
-shell wrapper and replica-set configuration in a standalone mongosh JavaScript
-file.
+Local development runs PostgreSQL 18.4 through `compose.yaml`. It publishes only
+to `127.0.0.1:5432`, persists state in the Docker-managed
+`reviewfold-postgresql-data` volume, and creates a separate `reviewfold_test`
+database during first-time initialization. Product schema changes belong in
+explicit migrations rather than request handling or container startup scripts.

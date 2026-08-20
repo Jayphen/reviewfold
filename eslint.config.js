@@ -28,7 +28,7 @@ const contractForbiddenImportPatterns = [
   ...serverOnlyImportPatterns,
   {
     regex:
-      '^(?:#/(?:ui|routes|functions|shared/ui)(?:/|$)|(?:\\.\\.?/)+(?:.*?/)?(?:ui|routes|functions|shared/ui)(?:/|$)|mongodb(?:/|$)|.*\\.functions(?:\\.[^/]*)?$)',
+      '^(?:#/(?:ui|routes|functions|shared/ui)(?:/|$)|(?:\\.\\.?/)+(?:.*?/)?(?:ui|routes|functions|shared/ui)(?:/|$)|pg(?:/|$)|.*\\.functions(?:\\.[^/]*)?$)',
     message: 'Contracts must remain portable across deployment targets.',
   },
 ]

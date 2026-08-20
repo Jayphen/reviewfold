@@ -9,7 +9,7 @@ A React and TanStack Start foundation for creating, reading, and reviewing Markd
 - TanStack Form and Zod for forms and validation
 - Astryx core with the neutral theme and StyleX compilation
 - Unified, remark parse/stringify, and GFM support for Markdown workflows
-- MongoDB Node.js driver with a local single-node replica set
+- PostgreSQL with the `pg` Node.js driver and connection pooling
 - ESLint, Prettier, dependency-cruiser, and pnpm
 - Nitro Node server targeting Railway
 
@@ -52,26 +52,26 @@ pnpm dev
 
 The development server runs at <http://localhost:3000>.
 
-## Local MongoDB
+## Local PostgreSQL
 
-The Compose setup runs MongoDB 8.0.28 as a single-node `rs0` replica set. It
-initializes idempotently, waits for a writable primary, publishes only to
-`127.0.0.1:27017`, and persists data in the named
-`reviewfold-mongodb-data` volume managed by Colima.
+The Compose setup runs PostgreSQL 18.4, waits for it to accept connections,
+publishes only to `127.0.0.1:5432`, and persists data in the named
+`reviewfold-postgresql-data` volume managed by Colima. Initial startup creates
+separate `reviewfold` and `reviewfold_test` databases.
 
 ```bash
-pnpm db:up       # start, initialize, and wait for the primary
+pnpm db:up       # start PostgreSQL and wait until it is healthy
 pnpm db:status   # inspect container and health state
 pnpm db:down     # stop containers and preserve the named volume
 pnpm db:reset    # delete the named volume and start from an empty database
 ```
 
-`pnpm db:reset` is destructive for local MongoDB data. The replica-set member
-advertises `127.0.0.1:27017` so the host-run TanStack app can discover it after
-the initial connection crosses the Colima port mapping. No database credentials
-are used in this loopback-only development setup.
+`pnpm db:reset` is destructive for local PostgreSQL data. The loopback-only
+development credentials are documented in `.env.example`; use separate secrets
+outside local development.
 
-With the replica set running, verify the driver connection and primary state:
+With PostgreSQL running, verify the pooled driver connection and transaction
+behavior:
 
 ```bash
 pnpm test:integration
@@ -95,7 +95,11 @@ pnpm check
 
 `pnpm format` writes formatting changes; CI and review workflows should use the non-mutating `pnpm format:check`. `pnpm boundaries` validates the source dependency graph with dependency-cruiser, while `pnpm boundaries:graph` writes an ignored, boundary-level Mermaid graph to `architecture-boundaries.mmd`. `pnpm check` runs formatting validation, linting, dependency-boundary checks, type checking, unit tests, and the production build.
 
-The pull-request workflow runs `pnpm check` in its main job. A separate integration job starts the Docker Compose MongoDB replica set, runs `pnpm test:integration`, and removes its containers and volume even when an earlier step fails. Locally, MongoDB integration remains opt-in because it requires the replica set to be running.
+The pull-request workflow runs `pnpm check` in its main job. A separate
+integration job starts Docker Compose PostgreSQL, runs `pnpm test:integration`,
+and removes its container and volume even when an earlier step fails. Locally,
+PostgreSQL integration remains opt-in because it requires the database to be
+running.
 
 ## Astryx
 
@@ -145,7 +149,7 @@ Copy the documented non-secret defaults before starting the app:
 cp .env.example .env
 ```
 
-The server requires `APP_ENV`, `MONGODB_URI`, and `MONGODB_DATABASE`. They are
+The server requires `APP_ENV` and `DATABASE_URL`. They are
 validated on every server request before application code runs; missing or
 invalid values produce an error naming each affected variable and pointing back
 to `.env.example`. Tests pass isolated values directly to the parser and never
@@ -156,11 +160,11 @@ to the browser bundle. The environment accessor lives in
 `src/server/platform/environment/environment.server.ts` and must not be imported
 by routes or UI.
 
-The MongoDB client lives in
-`src/server/platform/mongodb/client.server.ts`. It caches one connected driver
-client for the server process, exposes session and transaction primitives for
-future server modules, and provides an explicit close function for tests. It
-does not create collections, indexes, or feature repositories.
+The PostgreSQL pool lives in
+`src/server/platform/postgresql/client.server.ts`. It caches one `pg.Pool` for
+the server process, keeps transactions on one checked-out connection, and
+provides an explicit close function for tests. It does not create tables,
+indexes, migrations, or feature repositories.
 
 ## Markdown
 
@@ -174,8 +178,8 @@ package metadata; confirm those versions in the Railway build log when creating
 or changing the service.
 
 1. Push the repository to GitHub and create a Railway project from it.
-2. Configure `APP_ENV`, `MONGODB_URI`, and `MONGODB_DATABASE` with Railway
-   service variables or references.
+2. Add a Railway PostgreSQL service and configure `APP_ENV` and `DATABASE_URL`,
+   preferably using a service-variable reference.
 3. Deploy and generate a domain under **Networking**.
 
 Railpack runs `pnpm build` and starts the Nitro server with `pnpm start` (`node .output/server/index.mjs`).

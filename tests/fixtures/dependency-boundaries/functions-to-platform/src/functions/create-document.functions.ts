@@ -1,1 +1,1 @@
-import '../server/platform/mongodb/client.server'
+import '../server/platform/postgresql/client.server'

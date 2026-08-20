@@ -94,11 +94,11 @@ export default {
       },
     },
     {
-      name: 'contracts-cannot-import-mongodb',
+      name: 'contracts-cannot-import-postgresql-driver',
       severity: 'error',
       comment: 'Database concerns belong behind the server boundary.',
       from: { path: contracts },
-      to: { path: '^mongodb(?:/|$)' },
+      to: { path: '^pg(?:/|$)' },
     },
     {
       name: 'server-modules-cannot-import-outward-adapters-or-ui',
