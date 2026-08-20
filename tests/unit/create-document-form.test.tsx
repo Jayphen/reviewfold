@@ -1,7 +1,14 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
   CREATE_DOCUMENT_CONTENT_MAX_BYTES,
@@ -159,5 +166,87 @@ describe('create document content field', () => {
     expect(description).toContain(
       `Content must be ${CREATE_DOCUMENT_CONTENT_MAX_BYTES} UTF-8 bytes or fewer`,
     )
+  })
+})
+
+describe('create document validation', () => {
+  it('does not display validation before the user interacts with the form', () => {
+    render(<CreateDocumentForm />)
+
+    expect(screen.queryByText('Title must not be empty')).toBeNull()
+    expect(screen.queryByText('Content must not be empty')).toBeNull()
+    expect(screen.queryByText('The document could not be created')).toBeNull()
+  })
+
+  it('shows a summary and focuses the first invalid field on submit', async () => {
+    const user = userEvent.setup()
+    render(<CreateDocumentForm />)
+
+    await user.click(screen.getByRole('button', { name: 'Create document' }))
+
+    await screen.findByText('The document could not be created')
+    expect(screen.getByText('Title must not be empty')).toBeTruthy()
+    expect(
+      screen.getAllByText('Content must not be empty').length,
+    ).toBeGreaterThan(0)
+    expect(document.activeElement).toBe(getTitleInput())
+  })
+
+  it('focuses content when it is the first invalid field', async () => {
+    const user = userEvent.setup()
+    render(<CreateDocumentForm />)
+
+    await user.type(getTitleInput(), 'Architecture notes')
+    await user.click(screen.getByRole('button', { name: 'Create document' }))
+
+    await screen.findByText('Content must not be empty')
+    expect(document.activeElement).toBe(getContentInput())
+  })
+
+  it('clears field errors and the summary as the submitted values are corrected', async () => {
+    const user = userEvent.setup()
+    render(<CreateDocumentForm />)
+    await user.click(screen.getByRole('button', { name: 'Create document' }))
+    await screen.findByText('The document could not be created')
+    await waitFor(() => {
+      expect(document.activeElement).toBe(getTitleInput())
+    })
+
+    await user.type(getTitleInput(), 'Architecture notes')
+    await user.type(getContentInput(), '# Architecture')
+
+    await waitFor(() => {
+      expect(getTitleInput().getAttribute('aria-invalid')).toBeNull()
+      expect(getContentInput().getAttribute('aria-invalid')).toBeNull()
+      expect(screen.queryByText('The document could not be created')).toBeNull()
+    })
+  })
+
+  it('never invokes valid submission for invalid input', async () => {
+    const user = userEvent.setup()
+    const onSubmit = vi.fn()
+    render(<CreateDocumentForm onSubmit={onSubmit} />)
+
+    await user.click(screen.getByRole('button', { name: 'Create document' }))
+
+    await screen.findByText('The document could not be created')
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+  it('submits valid values through the native form element', async () => {
+    const user = userEvent.setup()
+    const onSubmit = vi.fn()
+    render(<CreateDocumentForm onSubmit={onSubmit} />)
+
+    await user.type(getTitleInput(), 'Architecture notes')
+    await user.type(getContentInput(), '# Architecture')
+    await user.click(screen.getByRole('button', { name: 'Create document' }))
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith({
+        title: 'Architecture notes',
+        content: '# Architecture',
+      })
+    })
   })
 })
