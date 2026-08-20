@@ -98,9 +98,15 @@ owner. It reads validated configuration when the pool is first requested,
 caches one `pg.Pool` for the server process, exposes a transaction helper that
 keeps each transaction on one checked-out client, and can be explicitly closed
 by tests. It does not own feature tables, indexes, migrations, or repositories.
+Feature persistence stays under the matching `server/modules` feature and uses
+the supplied transaction client rather than acquiring another connection.
 
 Local development runs PostgreSQL 18.4 through `compose.yaml`. It publishes only
 to `127.0.0.1:5432`, persists state in the Docker-managed
 `reviewfold-postgresql-data` volume, and creates a separate `reviewfold_test`
 database during first-time initialization. Product schema changes belong in
 explicit migrations rather than request handling or container startup scripts.
+Versioned product migrations live under `infra/postgresql/migrations` and run
+with `pnpm db:migrate`; applied filenames are recorded in
+`reviewfold_migrations`. Document schema and transaction decisions are captured
+in [ADR 0001](../docs/adr/0001-document-persistence.md).

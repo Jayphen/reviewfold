@@ -18,6 +18,7 @@
     "boundaries:graph": "depcruise src --config .dependency-cruiser.mjs --include-only '^src/' --exclude '^src/routeTree[.]gen[.]ts$' --collapse '^src/(?:routes|functions|contracts)(?:/|$)|^src/ui/(?:design-system|shell|modules)(?:/|$)|^src/server/(?:modules|platform)(?:/|$)|^src/shared/(?:universal|ui|server)(?:/|$)' --output-type mermaid --output-to architecture-boundaries.mmd",
     "db:up": "bash scripts/db-up.sh",
     "db:down": "docker compose down --remove-orphans",
+    "db:migrate": "node --env-file-if-exists=.env scripts/migrate-postgresql.mjs",
     "db:reset": "bash scripts/db-reset.sh",
     "db:status": "docker compose ps",
     "format": "prettier . --write",
@@ -25,7 +26,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
-    "test:integration": "APP_ENV=test DATABASE_URL='postgresql://reviewfold:reviewfold@127.0.0.1:5432/reviewfold_test' RUN_POSTGRES_INTEGRATION=1 vitest run tests/integration",
+    "test:integration": "APP_ENV=test DATABASE_URL='postgresql://reviewfold:reviewfold@127.0.0.1:5432/reviewfold_test' pnpm db:migrate && APP_ENV=test DATABASE_URL='postgresql://reviewfold:reviewfold@127.0.0.1:5432/reviewfold_test' RUN_POSTGRES_INTEGRATION=1 vitest run tests/integration --no-file-parallelism",
     "typecheck": "tsc --noEmit",
     "check": "pnpm format:check && pnpm lint && pnpm boundaries && pnpm typecheck && pnpm test:unit && pnpm build"
   },
