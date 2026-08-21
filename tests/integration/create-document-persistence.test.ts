@@ -22,6 +22,20 @@ const validInput = {
   content: '# Introduction\n\nDocument content.',
 } as const
 
+async function persistDocumentSuccessfully(
+  input: Parameters<typeof persistDocument>[0],
+) {
+  const result = await persistDocument(input)
+
+  if (result.isErr()) {
+    throw new Error(
+      `Expected persistence success, received ${result.error.type}`,
+    )
+  }
+
+  return result.value
+}
+
 describeWithPostgres('PostgreSQL document persistence', () => {
   beforeEach(async () => {
     await getPostgresPool().query(
@@ -34,7 +48,7 @@ describeWithPostgres('PostgreSQL document persistence', () => {
   })
 
   it('atomically creates a draft document and immutable revision 1', async () => {
-    const result = await persistDocument(validInput)
+    const result = await persistDocumentSuccessfully(validInput)
 
     expect(result.outcome).toBe('created')
 
@@ -89,10 +103,10 @@ describeWithPostgres('PostgreSQL document persistence', () => {
 
   it('returns the original document for sequential and concurrent retries', async () => {
     const [first, concurrentRetry] = await Promise.all([
-      persistDocument(validInput),
-      persistDocument(validInput),
+      persistDocumentSuccessfully(validInput),
+      persistDocumentSuccessfully(validInput),
     ])
-    const laterRetry = await persistDocument(validInput)
+    const laterRetry = await persistDocumentSuccessfully(validInput)
 
     expect([first.outcome, concurrentRetry.outcome]).toContain('created')
     expect([first.documentId, concurrentRetry.documentId]).toEqual([
@@ -118,8 +132,8 @@ describeWithPostgres('PostgreSQL document persistence', () => {
 
   it('scopes command idempotency to a workspace', async () => {
     const otherWorkspaceId = '01950000-0000-7000-8000-000000000004'
-    const first = await persistDocument(validInput)
-    const second = await persistDocument({
+    const first = await persistDocumentSuccessfully(validInput)
+    const second = await persistDocumentSuccessfully({
       ...validInput,
       workspaceId: otherWorkspaceId,
     })
@@ -200,7 +214,7 @@ describeWithPostgres('PostgreSQL document persistence', () => {
   })
 
   it('prevents revision updates and duplicate revision numbers', async () => {
-    const created = await persistDocument(validInput)
+    const created = await persistDocumentSuccessfully(validInput)
 
     await expect(
       getPostgresPool().query(

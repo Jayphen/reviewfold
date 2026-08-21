@@ -1,0 +1,1060 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reviewfold create-document data flow</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --page: #f4f3ef;
+        --surface: #fffefa;
+        --surface-strong: #ffffff;
+        --text: #191918;
+        --muted: #686762;
+        --line: #d9d7cf;
+        --accent: #3159c7;
+        --accent-soft: #e8edff;
+        --success: #21734b;
+        --success-soft: #e4f4eb;
+        --warning: #8a5b08;
+        --warning-soft: #fff2d7;
+        --danger: #a03935;
+        --danger-soft: #fde9e7;
+        --code: #292a2e;
+        --shadow: 0 18px 60px rgba(41, 40, 35, 0.08);
+      }
+
+      html[data-theme='dark'] {
+        color-scheme: dark;
+        --page: #171817;
+        --surface: #202220;
+        --surface-strong: #262826;
+        --text: #f3f2ed;
+        --muted: #aaa9a2;
+        --line: #3a3d39;
+        --accent: #9aafff;
+        --accent-soft: #29345b;
+        --success: #79d6a6;
+        --success-soft: #1f3c2d;
+        --warning: #f0c46b;
+        --warning-soft: #453718;
+        --danger: #f29b94;
+        --danger-soft: #492927;
+        --code: #f3f2ed;
+        --shadow: 0 18px 60px rgba(0, 0, 0, 0.22);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        background: var(--page);
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at 85% 8%, var(--accent-soft), transparent 24rem),
+          var(--page);
+        color: var(--text);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.55;
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      code,
+      .mono {
+        color: var(--code);
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        font-size: 0.9em;
+        overflow-wrap: anywhere;
+      }
+
+      .page {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 32px 0 72px;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 52px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 750;
+        letter-spacing: -0.02em;
+      }
+
+      .brand-mark {
+        width: 28px;
+        height: 28px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background:
+          linear-gradient(135deg, transparent 48%, var(--accent) 49% 54%, transparent 55%),
+          var(--surface-strong);
+        box-shadow: var(--shadow);
+      }
+
+      .theme-button {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 8px 13px;
+        background: var(--surface);
+        color: var(--text);
+        cursor: pointer;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.55fr);
+        gap: 36px;
+        align-items: end;
+        margin-bottom: 44px;
+      }
+
+      .eyebrow {
+        margin: 0 0 12px;
+        color: var(--accent);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        max-width: 830px;
+        margin-bottom: 18px;
+        font-size: clamp(2.5rem, 7vw, 5.6rem);
+        font-weight: 760;
+        letter-spacing: -0.065em;
+        line-height: 0.94;
+      }
+
+      .lede {
+        max-width: 760px;
+        margin-bottom: 0;
+        color: var(--muted);
+        font-size: clamp(1.05rem, 2vw, 1.3rem);
+      }
+
+      .status-card {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 20px;
+        background: color-mix(in srgb, var(--surface) 92%, transparent);
+        box-shadow: var(--shadow);
+      }
+
+      .status-line {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+
+      .status-dot {
+        flex: 0 0 auto;
+        width: 9px;
+        height: 9px;
+        margin-top: 7px;
+        border-radius: 50%;
+        background: var(--warning);
+      }
+
+      .status-card strong {
+        display: block;
+        margin-bottom: 5px;
+      }
+
+      .status-card p {
+        margin-bottom: 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .section {
+        margin-top: 28px;
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .section-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 24px;
+        padding: 26px 28px 20px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .section-head h2 {
+        margin-bottom: 6px;
+        font-size: clamp(1.45rem, 3vw, 2rem);
+        letter-spacing: -0.035em;
+      }
+
+      .section-head p {
+        max-width: 720px;
+        margin-bottom: 0;
+        color: var(--muted);
+      }
+
+      .section-index {
+        flex: 0 0 auto;
+        color: var(--muted);
+        font-family: "SFMono-Regular", Consolas, monospace;
+        font-size: 0.78rem;
+      }
+
+      .diagram-wrap {
+        min-width: 0;
+        padding: 28px;
+        overflow-x: auto;
+      }
+
+      .mermaid {
+        min-width: 760px;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 20px;
+        padding: 0 28px 26px;
+        color: var(--muted);
+        font-size: 0.84rem;
+      }
+
+      .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+      }
+
+      .legend-swatch {
+        width: 11px;
+        height: 11px;
+        border-radius: 3px;
+        background: var(--accent-soft);
+        border: 1px solid var(--accent);
+      }
+
+      .legend-swatch.server {
+        background: var(--success-soft);
+        border-color: var(--success);
+      }
+
+      .legend-swatch.database {
+        background: var(--warning-soft);
+        border-color: var(--warning);
+      }
+
+      .layers {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .layer {
+        min-width: 0;
+        padding: 24px;
+        border-right: 1px solid var(--line);
+      }
+
+      .layer:last-child {
+        border-right: 0;
+      }
+
+      .layer-number {
+        display: inline-grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        margin-bottom: 18px;
+        border-radius: 8px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .layer h3 {
+        margin-bottom: 8px;
+        font-size: 1.05rem;
+        letter-spacing: -0.02em;
+      }
+
+      .layer p {
+        margin-bottom: 14px;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .file-ref {
+        display: block;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+        color: var(--accent);
+        font-size: 0.74rem;
+      }
+
+      .outcome-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 20px 28px 0;
+      }
+
+      .outcome-button {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 8px 13px;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+      }
+
+      .outcome-button[aria-pressed='true'] {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-weight: 700;
+      }
+
+      .outcome-panel {
+        display: none;
+        grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr);
+        gap: 24px;
+        padding: 24px 28px 30px;
+      }
+
+      .outcome-panel.active {
+        display: grid;
+      }
+
+      .outcome-summary {
+        border-radius: 16px;
+        padding: 20px;
+        background: var(--surface-strong);
+        border: 1px solid var(--line);
+      }
+
+      .outcome-summary h3 {
+        margin-bottom: 8px;
+      }
+
+      .outcome-summary p {
+        color: var(--muted);
+        margin-bottom: 0;
+      }
+
+      .trace {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .trace li {
+        position: relative;
+        padding: 0 0 18px 30px;
+        color: var(--muted);
+      }
+
+      .trace li:last-child {
+        padding-bottom: 0;
+      }
+
+      .trace li::before {
+        content: '';
+        position: absolute;
+        top: 7px;
+        left: 7px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+      }
+
+      .trace li::after {
+        content: '';
+        position: absolute;
+        top: 17px;
+        bottom: 0;
+        left: 10px;
+        width: 1px;
+        background: var(--line);
+      }
+
+      .trace li:last-child::after {
+        display: none;
+      }
+
+      .trace strong {
+        color: var(--text);
+      }
+
+      .taxonomy {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+      }
+
+      .taxonomy th,
+      .taxonomy td {
+        padding: 16px 20px;
+        text-align: left;
+        vertical-align: top;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .taxonomy th {
+        color: var(--muted);
+        font-size: 0.74rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .taxonomy tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .tag {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 3px 9px;
+        white-space: nowrap;
+        font-size: 0.75rem;
+        font-weight: 750;
+      }
+
+      .tag.expected {
+        background: var(--success-soft);
+        color: var(--success);
+      }
+
+      .tag.exception {
+        background: var(--danger-soft);
+        color: var(--danger);
+      }
+
+      .db-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .db-table {
+        min-width: 0;
+        padding: 26px 28px;
+      }
+
+      .db-table:first-child {
+        border-right: 1px solid var(--line);
+      }
+
+      .db-table h3 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      .db-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        background: var(--warning-soft);
+        border: 1px solid var(--warning);
+      }
+
+      .fields {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px 16px;
+        margin: 0;
+      }
+
+      .fields dt,
+      .fields dd {
+        margin: 0;
+        padding: 7px 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .fields dt {
+        font-family: "SFMono-Regular", Consolas, monospace;
+        font-size: 0.84rem;
+      }
+
+      .fields dd {
+        color: var(--muted);
+        font-size: 0.8rem;
+        text-align: right;
+      }
+
+      .constraint-note {
+        margin: 22px 28px 28px;
+        padding: 17px 19px;
+        border-radius: 14px;
+        border: 1px solid var(--warning);
+        background: var(--warning-soft);
+        color: var(--warning);
+      }
+
+      .boundary-callout {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 16px;
+        align-items: start;
+        margin-top: 28px;
+        border: 1px solid var(--accent);
+        border-radius: 18px;
+        padding: 20px;
+        background: var(--accent-soft);
+      }
+
+      .boundary-symbol {
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: white;
+        font-weight: 800;
+      }
+
+      .boundary-callout h2 {
+        margin-bottom: 5px;
+        font-size: 1.05rem;
+      }
+
+      .boundary-callout p {
+        margin-bottom: 0;
+        color: var(--muted);
+      }
+
+      footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        margin-top: 32px;
+        padding-top: 22px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      @media (max-width: 900px) {
+        .hero,
+        .outcome-panel.active {
+          grid-template-columns: 1fr;
+        }
+
+        .layers {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .layer:nth-child(2) {
+          border-right: 0;
+        }
+
+        .layer:nth-child(-n + 2) {
+          border-bottom: 1px solid var(--line);
+        }
+      }
+
+      @media (max-width: 650px) {
+        .page {
+          width: min(100% - 20px, 1180px);
+          padding-top: 18px;
+        }
+
+        .topbar {
+          margin-bottom: 36px;
+        }
+
+        .hero {
+          gap: 24px;
+        }
+
+        .section-head,
+        .diagram-wrap,
+        .layer,
+        .db-table,
+        .outcome-panel {
+          padding-left: 18px;
+          padding-right: 18px;
+        }
+
+        .layers,
+        .db-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .layer,
+        .layer:nth-child(2),
+        .db-table:first-child {
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .layer:last-child,
+        .db-table:last-child {
+          border-bottom: 0;
+        }
+
+        .section-head,
+        footer {
+          flex-direction: column;
+        }
+
+        .taxonomy th,
+        .taxonomy td {
+          min-width: 145px;
+          padding: 13px 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="topbar">
+        <div class="brand"><span class="brand-mark" aria-hidden="true"></span>Reviewfold</div>
+        <button class="theme-button" id="theme-toggle" type="button">Dark mode</button>
+      </header>
+
+      <section class="hero">
+        <div>
+          <p class="eyebrow">JAY-30 / document creation</p>
+          <h1>How a create command reaches PostgreSQL</h1>
+          <p class="lede">
+            The handler validates untrusted input. Server code adds actor and workspace
+            IDs. The repository writes the document and revision in one transaction.
+          </p>
+        </div>
+        <aside class="status-card">
+          <div class="status-line">
+            <span class="status-dot" aria-hidden="true"></span>
+            <div>
+              <strong>Missing connection</strong>
+              <p>
+                The handler and repository work. <code>CreateDocumentForm</code> does not
+                call a TanStack <code>createServerFn</code> yet.
+              </p>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>Server flow</h2>
+            <p>
+              Solid arrows show values passed to the next function. Dashed arrows show
+              error mapping. Unknown failures throw.
+            </p>
+          </div>
+          <span class="section-index">01 / overview</span>
+        </div>
+        <div class="diagram-wrap">
+          <div class="mermaid">
+flowchart TD
+  UI["React form\nTitle + Markdown"] -. "transport not wired yet" .-> H
+  H["Public handler\ninput: unknown"] --> Z{"Zod safeParse"}
+  Z -- "invalid" --> IV["Portable invalid result\nfield issues"]
+  Z -- "normalized command" --> C["Trusted request context\nactorId + workspaceId"]
+  C --> A["Application operation\nmerge command + context"]
+  A --> P["Persistence operation\nResultAsync"]
+  P --> TX["One PostgreSQL transaction\ninsert document + revision 1"]
+  TX -- "commit" --> CR["created\ndocumentId"]
+  TX -- "unique race" --> RL["Scoped command lookup"]
+  RL --> AC["already-committed\noriginal documentId"]
+  TX -. "recoverable write" .-> AM["persistence-outcome-ambiguous"]
+  AM -. "mapErr" .-> AR["ambiguous"]
+  AC --> M["handler .match()"]
+  CR --> M
+  AR --> M
+  M --> OUT["CreateDocumentResult\nplain serializable object"]
+
+  classDef portable fill:#e8edff,stroke:#3159c7,color:#17285f;
+  classDef server fill:#e4f4eb,stroke:#21734b,color:#153f2b;
+  classDef database fill:#fff2d7,stroke:#8a5b08,color:#533704;
+  classDef warning fill:#fde9e7,stroke:#a03935,color:#632420;
+  class UI,H,Z,IV,OUT portable;
+  class C,A,P,AC,CR,M,AM,AR server;
+  class TX,RL database;
+          </div>
+        </div>
+        <div class="legend" aria-label="Diagram legend">
+          <span class="legend-item"><span class="legend-swatch"></span>Contract and handler</span>
+          <span class="legend-item"><span class="legend-swatch server"></span>Server module</span>
+          <span class="legend-item"><span class="legend-swatch database"></span>PostgreSQL work</span>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>What each file owns</h2>
+            <p>Each file translates its result before returning to its caller.</p>
+          </div>
+          <span class="section-index">02 / boundaries</span>
+        </div>
+        <div class="layers">
+          <article class="layer">
+            <span class="layer-number">01</span>
+            <h3>Portable contract</h3>
+            <p>
+              Defines the browser command and result. Zod trims the title, converts CRLF
+              to LF, and rejects Markdown larger than 256 KiB.
+            </p>
+            <code class="file-ref">src/contracts/documents/create-document.ts</code>
+          </article>
+          <article class="layer">
+            <span class="layer-number">02</span>
+            <h3>Public handler</h3>
+            <p>
+              Accepts <code>unknown</code>. It maps Zod issues, gets trusted context,
+              consumes the internal result with <code>.match()</code>, and returns JSON-safe data.
+            </p>
+            <code class="file-ref">src/functions/create-document.functions.ts</code>
+          </article>
+          <article class="layer">
+            <span class="layer-number">03</span>
+            <h3>Application operation</h3>
+            <p>
+              Adds server-owned actor and workspace IDs. It renames persistence errors
+              without importing <code>pg</code> or SQL row types.
+            </p>
+            <code class="file-ref">src/server/modules/documents/application/create-document.server.ts</code>
+          </article>
+          <article class="layer">
+            <span class="layer-number">04</span>
+            <h3>Persistence</h3>
+            <p>
+              Generates IDs, runs SQL, handles command ID races, and classifies known
+              SQLSTATE and network errors. It rethrows unknown errors.
+            </p>
+            <code class="file-ref">src/server/modules/documents/persistence/postgresql-document-repository.server.ts</code>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>Follow an outcome</h2>
+            <p>Select a result to see which function creates it and what the caller receives.</p>
+          </div>
+          <span class="section-index">03 / paths</span>
+        </div>
+        <div class="outcome-controls" role="group" aria-label="Choose an outcome path">
+          <button class="outcome-button" type="button" data-outcome="created" aria-pressed="true">Created</button>
+          <button class="outcome-button" type="button" data-outcome="invalid" aria-pressed="false">Invalid</button>
+          <button class="outcome-button" type="button" data-outcome="retry" aria-pressed="false">Retry</button>
+          <button class="outcome-button" type="button" data-outcome="unavailable" aria-pressed="false">Unavailable</button>
+          <button class="outcome-button" type="button" data-outcome="ambiguous" aria-pressed="false">Ambiguous</button>
+        </div>
+
+        <div class="outcome-panel active" data-panel="created">
+          <div class="outcome-summary">
+            <h3><code>{ outcome: 'created', documentId }</code></h3>
+            <p>PostgreSQL committed both rows. The handler returns the document ID.</p>
+          </div>
+          <ol class="trace">
+            <li><strong>Zod</strong> returns a normalized <code>CreateDocumentCommand</code>.</li>
+            <li><strong>Application</strong> adds trusted <code>actorId</code> and <code>workspaceId</code>.</li>
+            <li><strong>Persistence</strong> generates document and revision UUIDs.</li>
+            <li><strong>Transaction</strong> inserts both rows and commits deferred constraints.</li>
+            <li><strong>Handler</strong> consumes <code>Ok</code> with <code>.match()</code>.</li>
+          </ol>
+        </div>
+
+        <div class="outcome-panel" data-panel="invalid">
+          <div class="outcome-summary">
+            <h3><code>{ outcome: 'invalid', issues }</code></h3>
+            <p>The handler returns validation issues before it asks for context or calls persistence.</p>
+          </div>
+          <ol class="trace">
+            <li><strong>Handler</strong> receives input as <code>unknown</code>.</li>
+            <li><strong>Zod</strong> rejects command ID, title, content, or extra fields.</li>
+            <li><strong>Issue mapping</strong> copies the field and message into the contract type.</li>
+            <li><strong>Handler</strong> returns without creating a <code>ResultAsync</code>.</li>
+          </ol>
+        </div>
+
+        <div class="outcome-panel" data-panel="retry">
+          <div class="outcome-summary">
+            <h3><code>already-committed → created</code></h3>
+            <p>The browser gets <code>created</code> with the ID from the first successful command.</p>
+          </div>
+          <ol class="trace">
+            <li><strong>Repository</strong> attempts the transaction without a preflight read.</li>
+            <li><strong>Unique constraint</strong> rejects the repeated workspace and command ID.</li>
+            <li><strong>Transaction helper</strong> rolls back the failed transaction.</li>
+            <li><strong>Conflict recovery</strong> looks up the original document ID.</li>
+            <li><strong>Application</strong> maps both persistence outcomes to the same created result.</li>
+          </ol>
+        </div>
+
+        <div class="outcome-panel" data-panel="unavailable">
+          <div class="outcome-summary">
+            <h3><code>{ outcome: 'recoverable-failure', message }</code></h3>
+            <p>The application supports this result, but the default create repository does not emit it.</p>
+          </div>
+          <ol class="trace">
+            <li><strong>Application type</strong> accepts <code>persistence-unavailable</code> from a persistence operation.</li>
+            <li><strong>Application</strong> maps it to <code>document-creation-unavailable</code>.</li>
+            <li><strong>Handler</strong> returns a fixed message and omits driver details.</li>
+            <li><strong>Default repository</strong> attempts a write first, so known failures are ambiguous instead.</li>
+          </ol>
+        </div>
+
+        <div class="outcome-panel" data-panel="ambiguous">
+          <div class="outcome-summary">
+            <h3><code>{ outcome: 'ambiguous', message }</code></h3>
+            <p>A write failed and the code cannot prove whether PostgreSQL committed. A retry must reuse the command ID.</p>
+          </div>
+          <ol class="trace">
+            <li><strong>Repository</strong> catches a known PostgreSQL or network failure during the write.</li>
+            <li><strong>Persistence</strong> emits <code>persistence-outcome-ambiguous</code>.</li>
+            <li><strong>Application</strong> maps it to <code>document-creation-outcome-ambiguous</code>.</li>
+            <li><strong>Handler</strong> returns a fixed message that tells the caller to reuse the command ID.</li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>Expected errors versus exceptions</h2>
+            <p>
+              The code uses <code>ResultAsync</code> for known database failures. Unknown
+              driver errors and impossible states still throw.
+            </p>
+          </div>
+          <span class="section-index">04 / taxonomy</span>
+        </div>
+        <div class="table-wrap">
+          <table class="taxonomy">
+            <thead>
+              <tr>
+                <th>Condition</th>
+                <th>Representation</th>
+                <th>Boundary behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Invalid browser command</td>
+                <td><span class="tag expected">Portable result</span></td>
+                <td>The handler returns <code>invalid</code> and does not call persistence.</td>
+              </tr>
+              <tr>
+                <td>Workspace command already committed</td>
+                <td><span class="tag expected">ResultAsync Ok</span></td>
+                <td>The application returns <code>created</code> with the original document ID.</td>
+              </tr>
+              <tr>
+                <td>Injected <code>persistence-unavailable</code> error</td>
+                <td><span class="tag expected">Supported mapping</span></td>
+                <td>The application can map it, but the default create repository does not emit it.</td>
+              </tr>
+              <tr>
+                <td>Recoverable failure during write</td>
+                <td><span class="tag expected">ResultAsync Err</span></td>
+                <td>The handler returns <code>ambiguous</code>. A retry uses the same command ID.</td>
+              </tr>
+              <tr>
+                <td>Unknown driver error or impossible state</td>
+                <td><span class="tag exception">Exception</span></td>
+                <td>The mapper throws the original error.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>Rows written by one transaction</h2>
+            <p>
+              One checked-out PostgreSQL client inserts the document and revision 1.
+              PostgreSQL checks the deferred foreign key during <code>COMMIT</code>.
+            </p>
+          </div>
+          <span class="section-index">05 / storage</span>
+        </div>
+        <div class="db-grid">
+          <article class="db-table">
+            <h3><span class="db-icon" aria-hidden="true"></span><code>documents</code></h3>
+            <dl class="fields">
+              <dt>id</dt><dd>primary UUID</dd>
+              <dt>workspace_id</dt><dd>trusted scope</dd>
+              <dt>created_by_actor_id</dt><dd>trusted owner</dd>
+              <dt>command_id</dt><dd>idempotency key</dd>
+              <dt>workflow_state</dt><dd>draft</dd>
+              <dt>current_revision_id</dt><dd>deferred FK</dd>
+              <dt>current_revision_number</dt><dd>positive integer</dd>
+            </dl>
+          </article>
+          <article class="db-table">
+            <h3><span class="db-icon" aria-hidden="true"></span><code>document_revisions</code></h3>
+            <dl class="fields">
+              <dt>id</dt><dd>primary UUID</dd>
+              <dt>document_id</dt><dd>document FK</dd>
+              <dt>revision_number</dt><dd>unique per document</dd>
+              <dt>title</dt><dd>1 to 200 chars</dd>
+              <dt>markdown_source</dt><dd>canonical, max 256 KiB</dd>
+              <dt>created_by_actor_id</dt><dd>trusted author</dd>
+              <dt>mutation trigger</dt><dd>update/delete rejected</dd>
+            </dl>
+          </article>
+        </div>
+        <div class="constraint-note">
+          <strong>Deferred current-revision constraint.</strong>
+          <code>(current_revision_id, id, current_revision_number)</code> must match
+          <code>(revision.id, revision.document_id, revision.revision_number)</code>.
+          PostgreSQL rejects a document that points at another document's revision.
+        </div>
+      </section>
+
+      <aside class="boundary-callout">
+        <span class="boundary-symbol" aria-hidden="true">↯</span>
+        <div>
+          <h2><code>.match()</code> ends the internal result chain</h2>
+          <p>
+            <code>ResultAsync</code>, <code>DatabaseError</code>, SQLSTATE values, row
+            types, and constraint names stay out of <code>src/contracts</code>. The handler
+            calls <code>.match()</code> and returns a <code>CreateDocumentResult</code> object.
+          </p>
+        </div>
+      </aside>
+
+      <footer>
+        <span>Source checked against the current Reviewfold workspace.</span>
+        <span class="mono">contracts → functions → application → persistence → PostgreSQL</span>
+      </footer>
+    </main>
+
+    <script>
+      const root = document.documentElement
+      const themeButton = document.querySelector('#theme-toggle')
+
+      themeButton.addEventListener('click', () => {
+        const nextTheme = root.dataset.theme === 'light' ? 'dark' : 'light'
+        root.dataset.theme = nextTheme
+        themeButton.textContent = nextTheme === 'light' ? 'Dark mode' : 'Light mode'
+      })
+
+      const outcomeButtons = [...document.querySelectorAll('[data-outcome]')]
+      const outcomePanels = [...document.querySelectorAll('[data-panel]')]
+
+      for (const button of outcomeButtons) {
+        button.addEventListener('click', () => {
+          const selected = button.dataset.outcome
+
+          for (const candidate of outcomeButtons) {
+            candidate.setAttribute(
+              'aria-pressed',
+              candidate === button ? 'true' : 'false',
+            )
+          }
+
+          for (const panel of outcomePanels) {
+            panel.classList.toggle('active', panel.dataset.panel === selected)
+          }
+        })
+      }
+    </script>
+
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.esm.min.mjs'
+
+      const darkQuery = window.matchMedia('(prefers-color-scheme: dark)')
+      const diagrams = [...document.querySelectorAll('.mermaid')].map((element) => ({
+        element,
+        source: element.innerHTML,
+      }))
+      let appliedTheme
+      let rendering = false
+      let queued = false
+
+      function pageIsDark() {
+        return document.documentElement.dataset.theme === 'dark'
+      }
+
+      function queueRender() {
+        queued = true
+        if (!rendering) void render()
+      }
+
+      async function render() {
+        rendering = true
+        try {
+          while (queued) {
+            queued = false
+            const theme = pageIsDark() ? 'dark' : 'default'
+            if (theme === appliedTheme) continue
+
+            mermaid.initialize({
+              startOnLoad: false,
+              theme,
+              securityLevel: 'strict',
+              flowchart: { curve: 'basis', htmlLabels: true },
+            })
+
+            for (const { element, source } of diagrams) {
+              element.removeAttribute('data-processed')
+              element.innerHTML = source
+            }
+
+            await mermaid.run({ nodes: diagrams.map(({ element }) => element) })
+            appliedTheme = theme
+          }
+        } catch (error) {
+          console.error('Mermaid diagram render failed:', error)
+        } finally {
+          rendering = false
+          if (queued) queueRender()
+        }
+      }
+
+      window.addEventListener('load', queueRender, { once: true })
+      new MutationObserver(queueRender).observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-theme'],
+      })
+      darkQuery.addEventListener('change', queueRender)
+    </script>
+  </body>
+</html>

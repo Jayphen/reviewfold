@@ -110,3 +110,57 @@ Versioned product migrations live under `infra/postgresql/migrations` and run
 with `pnpm db:migrate`; applied filenames are recorded in
 `reviewfold_migrations`. Document schema and transaction decisions are captured
 in [ADR 0001](../docs/adr/0001-document-persistence.md).
+
+## Expected errors
+
+Reviewfold uses `Result<T, E>` and `ResultAsync<T, E>` from `neverthrow` for
+expected failures in application and infrastructure operations. Feature-local
+discriminated unions define errors at each layer. Do not create a global error
+class hierarchy.
+
+- Persistence converts expected third-party failures at its boundary with an
+  explicit `unknown` mapper. It may retain database-specific classification,
+  but its returned errors cannot contain SQL, credentials, rows, or driver
+  objects.
+- Application operations translate persistence errors with `mapErr` and
+  compose dependent operations with `andThen` or `orElse`.
+- Public adapters consume every internal result with `match` and return only a
+  portable contract or framework response. Never serialize a `Result` or
+  `ResultAsync` instance to the browser.
+- Programmer errors, violated invariants, impossible states, and framework
+  control flow remain exceptions. Resource ownership still uses `try/finally`
+  where a PostgreSQL client, pool, or similar handle must always be released.
+- Do not wrap functions that cannot meaningfully fail or replace Zod validation
+  issues with neverthrow errors. Avoid unsafe result unwrapping in production
+  code.
+
+Naming follows the operation. Functions return `Result<T, FeatureError>` or
+`ResultAsync<T, FeatureError>`, use a small `type`-discriminated error union,
+and name conversions after their boundary, such as `mapPersistenceError`.
+`map` transforms success values, `mapErr` translates errors between layers,
+`andThen` sequences required work, `orElse` performs typed recovery, and
+`match` exhaustively consumes a result at the outward boundary.
+
+```ts
+// Persistence introduces a feature-local expected error.
+function persistDocument(
+  input: PersistDocumentInput,
+): ResultAsync<PersistDocumentResult, PersistDocumentError>
+
+// Application code translates it without exposing PostgreSQL details.
+return persistDocument(input)
+  .map(({ documentId }) => ({ documentId }))
+  .mapErr(mapPersistenceError)
+
+// The outward adapter consumes the class instance and returns plain data.
+return createDocument(command, requestContext).match(
+  ({ documentId }) => ({ outcome: 'created', documentId }),
+  mapCreationError,
+)
+```
+
+`eslint-plugin-neverthrow` 1.1.4 was evaluated but is not enabled. It depends
+on legacy rule APIs including `context.parserServices` and `context.getScope`
+that are incompatible with the repository's ESLint 10 setup. Focused tests and
+review enforce result consumption until the plugin supports the current ESLint
+API or an equivalent maintained rule is available.
