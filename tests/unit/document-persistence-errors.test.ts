@@ -8,7 +8,7 @@ const postgres = vi.hoisted(() => ({
 
 vi.mock('#/server/platform/postgresql/client.server', () => postgres)
 
-import { persistDocument } from '#/server/modules/documents/persistence/postgresql-document-repository.server'
+import { persistDocument } from '#/server/modules/documents/persistence/postgresql-repository.server'
 
 const validInput = {
   commandId: '01950000-0000-7000-8000-000000000001',

@@ -1,21 +1,24 @@
 # Source boundaries
 
-Reviewfold is organized first by deployment target, then by feature. A feature
-may have matching folders across `ui/modules`, `functions`, `contracts`, and
-`server/modules`, but dependencies always point from adapters toward portable
-contracts and server internals.
+Reviewfold is organized first by deployment target, then by feature. When a
+feature appears in `ui/modules`, `functions`, `contracts`, or `server/modules`,
+it uses the same feature folder name in every zone. Dependencies point from
+adapters toward portable contracts and server internals.
 
 ```text
 src/
   routes/                    TanStack file-route adapters
   ui/
-    design-system/           Astryx setup and app-level design tokens
+    design-system/           Astryx global stylesheet entry point
     shell/                   Application frame and root providers
-    modules/                 Browser-facing feature modules
-  functions/                 Client-callable createServerFn adapters
-  contracts/                 Portable commands, results, and schemas
+    modules/<feature>/       Browser-facing feature modules
+  functions/<feature>/       Client-callable createServerFn adapters
+  contracts/<feature>/       Portable commands, results, and schemas
+  contracts/platform/        Portable platform configuration contracts
   server/
-    modules/                 Server-only feature application code
+    modules/<feature>/
+      application/           Server-only orchestration
+      persistence/           Feature storage and driver error mapping
     platform/
       environment/           Validated server runtime configuration
       postgresql/            PostgreSQL infrastructure
@@ -24,6 +27,11 @@ src/
     ui/                      Cross-feature UI helpers
     server/                  Cross-feature server-only helpers
 ```
+
+`router.tsx`, `start.ts`, and generated `routeTree.gen.ts` remain at `src/`
+because they are TanStack Start entry points rather than product zones. The
+Astryx CSS imports live in `ui/design-system`; the shell owns the runtime theme
+provider and application frame.
 
 ## Dependency direction
 
@@ -59,21 +67,26 @@ trees.
 Within the server boundary, imports follow one direction:
 
 ```ts
-// Allowed: public adapter delegates to a feature operation.
-import { createDocument } from '#/server/modules/documents/create-document.server'
+// Allowed: public adapter delegates to an application operation.
+import { createDocument } from '#/server/modules/documents/application/create-document.server'
 
 // Rejected: public adapter bypasses the feature module.
 import { getPostgresPool } from '#/server/platform/postgresql/client.server'
 
-// Allowed: feature code uses infrastructure.
+// Allowed: persistence uses platform infrastructure.
 import { getPostgresPool } from '#/server/platform/postgresql/client.server'
 
-// Rejected: infrastructure depends on feature behavior.
-import { createDocument } from '#/server/modules/documents/create-document.server'
+// Rejected: application code imports a PostgreSQL driver type.
+import { DatabaseError } from 'pg'
+
+// Rejected: persistence depends on application orchestration.
+import { createDocument } from '#/server/modules/documents/application/create-document.server'
 ```
 
-Both server sublayers also remain isolated from routes, UI, public functions,
-and `shared/ui`.
+Application code may depend on persistence outcomes but cannot import `pg`.
+Persistence may depend on server platform code but cannot import application
+code. Both sublayers remain isolated from routes, UI, public functions, and
+`shared/ui`.
 
 ## Enforcement
 
@@ -82,7 +95,8 @@ Run `pnpm boundaries` to validate this dependency graph with
 circular, unresolved, undeclared, and Node-only dependencies outside the server
 zone. ESLint keeps the corresponding high-signal rules available in editors,
 including the allowed `ui → functions` direction and forbidden reverse import,
-and enforces the target-specific filename suffixes.
+the application and persistence rules, and the target-specific filename
+suffixes.
 
 Run `pnpm boundaries:graph` to write the current source dependencies as a
 boundary-level Mermaid graph in `architecture-boundaries.mmd`. The graph

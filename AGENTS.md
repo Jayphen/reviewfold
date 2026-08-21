@@ -46,7 +46,7 @@ Before editing files for a substantial task:
 
 ## Environment and deployment
 
-- `APP_ENV` and `DATABASE_URL` are required. `.env.example` provides non-secret local defaults, the portable parser lives in `src/contracts/server-environment.ts`, and `src/server/platform/environment/environment.server.ts` reads `process.env` per request.
+- `APP_ENV` and `DATABASE_URL` are required. `.env.example` provides non-secret local defaults, the portable parser lives in `src/contracts/platform/environment.ts`, and `src/server/platform/environment/environment.server.ts` reads `process.env` per request.
 - Global request middleware in `src/start.ts` validates the server environment before application request handling. Tests pass isolated environment objects and must not mutate the developer's `process.env`.
 - Never prefix server secrets with `VITE_`; that prefix exposes values to the browser bundle.
 - TanStack Start modules and route loaders are isomorphic by default. Read server environment variables per request inside `createServerFn` handlers or another explicit server boundary, never at module scope.

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   InvalidServerEnvironmentError,
   parseServerEnvironment,
-} from '#/contracts/server-environment'
+} from '#/contracts/platform/environment'
 import { getServerEnvironment } from '#/server/platform/environment/environment.server'
 
 const documentedDevelopmentEnvironment = {

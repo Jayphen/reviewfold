@@ -33,6 +33,32 @@ const contractForbiddenImportPatterns = [
   },
 ]
 
+const serverOutwardImportPatterns = [
+  {
+    regex:
+      '^(?:#/(?:ui|routes|functions|shared/ui)(?:/|$)|(?:\\.\\.?/)+(?:.*?/)?(?:ui|routes|functions|shared/ui)(?:/|$))',
+    message: 'Server internals cannot depend on UI or outward adapters.',
+  },
+]
+
+const applicationForbiddenImportPatterns = [
+  ...serverOutwardImportPatterns,
+  {
+    regex: '^pg(?:/|$)',
+    message:
+      'Application operations must use persistence outcomes instead of PostgreSQL driver types.',
+  },
+]
+
+const persistenceForbiddenImportPatterns = [
+  ...serverOutwardImportPatterns,
+  {
+    regex:
+      '^(?:#/server/modules/[^/]+/application(?:/|$)|(?:\\.\\.?/)+(?:.*?/)?application(?:/|$))',
+    message: 'Persistence cannot depend on application orchestration.',
+  },
+]
+
 const nodeOnlyImports = [
   ...new Set(
     builtinModules.flatMap((name) => {
@@ -166,15 +192,26 @@ export default tseslint.config(
       'no-restricted-imports': [
         'error',
         {
-          patterns: [
-            {
-              regex:
-                '^(?:#/(?:ui|routes|functions|shared/ui)(?:/|$)|(?:\\.\\.?/)+(?:.*?/)?(?:ui|routes|functions|shared/ui)(?:/|$))',
-              message:
-                'Server internals cannot depend on UI or outward adapters.',
-            },
-          ],
+          patterns: serverOutwardImportPatterns,
         },
+      ],
+    },
+  },
+  {
+    files: ['src/server/modules/*/application/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: applicationForbiddenImportPatterns },
+      ],
+    },
+  },
+  {
+    files: ['src/server/modules/*/persistence/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: persistenceForbiddenImportPatterns },
       ],
     },
   },

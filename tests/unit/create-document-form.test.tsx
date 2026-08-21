@@ -14,7 +14,7 @@ import {
   CREATE_DOCUMENT_CONTENT_MAX_BYTES,
   CREATE_DOCUMENT_TITLE_MAX_LENGTH,
 } from '#/contracts/documents/create-document'
-import { CreateDocumentForm } from '#/ui/modules/document-editor/create-document-form'
+import { CreateDocumentForm } from '#/ui/modules/documents/create-document-form'
 
 afterEach(cleanup)
 

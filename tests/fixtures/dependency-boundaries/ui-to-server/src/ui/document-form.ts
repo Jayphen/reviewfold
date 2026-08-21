@@ -1,1 +1,1 @@
-import '../server/modules/documents/create-document.server'
+import '../server/modules/documents/application/create-document.server'

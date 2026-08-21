@@ -78,7 +78,7 @@ describe('UI and server-function dependency boundaries', () => {
         rule: expect.objectContaining({
           name: 'ui-cannot-import-routes-or-server-internals',
         }),
-        to: 'src/server/modules/documents/create-document.server.ts',
+        to: 'src/server/modules/documents/application/create-document.server.ts',
       }),
     ])
     expect(messages).toEqual([
@@ -94,12 +94,12 @@ describe('UI and server-function dependency boundaries', () => {
     const violations = await getBoundaryViolations('functions-to-ui')
     const messages = await getEditorBoundaryMessages(
       'functions-to-ui',
-      'functions/create-document.functions.ts',
+      'functions/documents/create-document.functions.ts',
     )
 
     expect(violations).toEqual([
       expect.objectContaining({
-        from: 'src/functions/create-document.functions.ts',
+        from: 'src/functions/documents/create-document.functions.ts',
         rule: expect.objectContaining({
           name: 'functions-cannot-import-outward-adapters-or-ui',
         }),
@@ -128,7 +128,7 @@ describe('server-layer dependency boundaries', () => {
 
     expect(violations).toEqual([
       expect.objectContaining({
-        from: 'src/functions/create-document.functions.ts',
+        from: 'src/functions/documents/create-document.functions.ts',
         rule: expect.objectContaining({
           name: 'functions-cannot-import-server-platform',
         }),
@@ -143,6 +143,57 @@ describe('server-layer dependency boundaries', () => {
     )
   })
 
+  it('rejects PostgreSQL driver imports from application operations', async () => {
+    const violations = await getBoundaryViolations('application-to-postgresql')
+    const messages = await getEditorBoundaryMessages(
+      'application-to-postgresql',
+      'server/modules/documents/application/forbidden-postgresql.server.ts',
+    )
+
+    expect(violations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          from: 'src/server/modules/documents/application/forbidden-postgresql.server.ts',
+          rule: expect.objectContaining({
+            name: 'server-application-cannot-import-postgresql-driver',
+          }),
+        }),
+      ]),
+    )
+    expect(messages).toEqual([
+      expect.objectContaining({
+        message: expect.stringContaining(
+          'Application operations must use persistence outcomes',
+        ),
+      }),
+    ])
+  })
+
+  it('rejects persistence imports of application operations', async () => {
+    const violations = await getBoundaryViolations('persistence-to-application')
+    const messages = await getEditorBoundaryMessages(
+      'persistence-to-application',
+      'server/modules/documents/persistence/forbidden-application-import.server.ts',
+    )
+
+    expect(violations).toEqual([
+      expect.objectContaining({
+        from: 'src/server/modules/documents/persistence/forbidden-application-import.server.ts',
+        rule: expect.objectContaining({
+          name: 'server-persistence-cannot-import-application',
+        }),
+        to: 'src/server/modules/documents/application/create-document.server.ts',
+      }),
+    ])
+    expect(messages).toEqual([
+      expect.objectContaining({
+        message: expect.stringContaining(
+          'Persistence cannot depend on application orchestration',
+        ),
+      }),
+    ])
+  })
+
   it('rejects platform imports of feature modules', async () => {
     const violations = await getBoundaryViolations('platform-to-modules')
 
@@ -152,7 +203,7 @@ describe('server-layer dependency boundaries', () => {
         rule: expect.objectContaining({
           name: 'server-platform-cannot-import-feature-modules',
         }),
-        to: 'src/server/modules/documents/create-document.server.ts',
+        to: 'src/server/modules/documents/application/create-document.server.ts',
       }),
     ])
   })

@@ -5,7 +5,7 @@ import {
   getPostgresPool,
   withPostgresTransaction,
 } from '#/server/platform/postgresql/client.server'
-import { persistDocument } from '#/server/modules/documents/persistence/postgresql-document-repository.server'
+import { persistDocument } from '#/server/modules/documents/persistence/postgresql-repository.server'
 
 const describeWithPostgres =
   process.env.RUN_POSTGRES_INTEGRATION === '1' ? describe : describe.skip

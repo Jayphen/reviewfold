@@ -8,7 +8,7 @@ import {
   type PersistDocumentError,
   type PersistDocumentInput,
   type PersistDocumentResult,
-} from '#/server/modules/documents/persistence/postgresql-document-repository.server'
+} from '#/server/modules/documents/persistence/postgresql-repository.server'
 
 export interface RequestContext {
   actorId: string

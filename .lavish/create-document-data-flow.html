@@ -745,7 +745,7 @@ flowchart TD
               Accepts <code>unknown</code>. It maps Zod issues, gets trusted context,
               consumes the internal result with <code>.match()</code>, and returns JSON-safe data.
             </p>
-            <code class="file-ref">src/functions/create-document.functions.ts</code>
+            <code class="file-ref">src/functions/documents/create-document.functions.ts</code>
           </article>
           <article class="layer">
             <span class="layer-number">03</span>
@@ -763,7 +763,7 @@ flowchart TD
               Generates IDs, runs SQL, handles command ID races, and classifies known
               SQLSTATE and network errors. It rethrows unknown errors.
             </p>
-            <code class="file-ref">src/server/modules/documents/persistence/postgresql-document-repository.server.ts</code>
+            <code class="file-ref">src/server/modules/documents/persistence/postgresql-repository.server.ts</code>
           </article>
         </div>
       </section>

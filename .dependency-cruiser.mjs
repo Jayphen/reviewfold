@@ -5,10 +5,17 @@ const functions = '^src/functions(?:/|$)'
 const contracts = '^src/contracts(?:/|$)'
 const server = '^src/server(?:/|$)'
 const serverModules = '^src/server/modules(?:/|$)'
+const serverModuleApplication = '^src/server/modules/[^/]+/application(?:/|$)'
+const serverModulePersistence = '^src/server/modules/[^/]+/persistence(?:/|$)'
 const serverPlatform = '^src/server/platform(?:/|$)'
 const universal = '^src/shared/universal(?:/|$)'
 const sharedUi = '^src/shared/ui(?:/|$)'
 const sharedServer = '^src/shared/server(?:/|$)'
+const postgresqlDriver = [
+  '^pg(?:/|$)',
+  'node_modules/[.]pnpm/pg@',
+  'node_modules/pg(?:/|$)',
+]
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 export default {
@@ -98,7 +105,7 @@ export default {
       severity: 'error',
       comment: 'Database concerns belong behind the server boundary.',
       from: { path: contracts },
-      to: { path: '^pg(?:/|$)' },
+      to: { path: postgresqlDriver },
     },
     {
       name: 'server-modules-cannot-import-outward-adapters-or-ui',
@@ -107,6 +114,22 @@ export default {
         'Feature modules cannot depend on routes, UI, or public functions.',
       from: { path: serverModules },
       to: { path: '^src/(?:routes|ui|functions|shared/ui)(?:/|$)' },
+    },
+    {
+      name: 'server-application-cannot-import-postgresql-driver',
+      severity: 'error',
+      comment:
+        'Application operations depend on persistence outcomes, not PostgreSQL driver types.',
+      from: { path: serverModuleApplication },
+      to: { path: postgresqlDriver },
+    },
+    {
+      name: 'server-persistence-cannot-import-application',
+      severity: 'error',
+      comment:
+        'Persistence is an inner feature layer and cannot depend on application orchestration.',
+      from: { path: serverModulePersistence },
+      to: { path: serverModuleApplication },
     },
     {
       name: 'server-platform-cannot-import-outward-adapters-or-ui',

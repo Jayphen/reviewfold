@@ -1,1 +1,1 @@
-import '../functions/create-document.functions'
+import '../functions/documents/create-document.functions'

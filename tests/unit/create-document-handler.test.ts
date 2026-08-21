@@ -5,7 +5,7 @@ import {
   createDocumentResultSchema,
   type CreateDocumentResult,
 } from '#/contracts/documents/create-document'
-import { createCreateDocumentHandler } from '#/functions/create-document.functions'
+import { createCreateDocumentHandler } from '#/functions/documents/create-document.functions'
 import {
   type CreateDocumentOperation,
   type RequestContext,
